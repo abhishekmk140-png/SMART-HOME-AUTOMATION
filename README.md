@@ -53,3 +53,21 @@ Open `esp32_relay_6ch/esp32_relay_6ch.ino` in Arduino IDE or compile via `arduin
 arduino-cli compile --fqbn esp32:esp32:esp32s3 esp32_relay_6ch
 ```
 Set `BOARD_ID` (1, 2, or 3) before flashing each respective room controller board.
+
+---
+
+### 4. Cloud Deployment (Vercel)
+
+This repository is pre-configured for **Vercel Multi-Service Monorepo** deployment via `vercel.json`:
+- **Frontend Service**: Vite React SPA (`frontend/`)
+- **Backend Service**: FastAPI Python Hub (`backend/`)
+- Automatic reverse proxy routing `/api/*` to FastAPI while serving all static assets and pages through Vite.
+
+---
+
+### 5. High-Performance / Low-Latency Design
+
+- **Hardware-Accelerated 3D Parallax**: Direct GPU matrix transformation on DOM refs with zero React state re-renders at 60–120 FPS.
+- **Smart Polling**: State diff hash checking prevents unnecessary component re-renders; background tab detection pauses polling automatically.
+- **Non-Blocking ESP32 Sensors**: Asynchronous I2C sensor conversion state machine ensures 0ms relay and network responsiveness.
+- **Fast HTTP Fail-Safe**: Integrated abort controller timeouts prevent network bottlenecks.
