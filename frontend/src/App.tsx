@@ -470,8 +470,6 @@ export default function App() {
     })
     api.all(rid, isOn).catch(() => {})
   }
-    api.all(rid, isOn).catch(() => load())
-  }
 
   // Instant optimistic scene switch
   const onScene = (n: string) => {

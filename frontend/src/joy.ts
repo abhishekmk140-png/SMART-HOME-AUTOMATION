@@ -78,7 +78,6 @@ class JoyAudio {
       } catch {}
     }, 0)
   }
-  }
 
   // Joyful 4-note ascending major arpeggio for Quick Scenes & celebrations
   sceneChime() {
