@@ -13,3 +13,4 @@ if str(BACKEND_DIR) not in sys.path:
 from backend.main import app
 
 __all__ = ["app"]
+
