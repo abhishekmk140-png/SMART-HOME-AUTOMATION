@@ -307,6 +307,10 @@ def _send_fast_cmd(host, port, wire_mask):
     except Exception:
         pass
 
+    # Fast check: If running in Vercel cloud, private RFC 1918 IPs cannot be reached across WAN
+    if os.getenv("VERCEL") == "1" and (host.startswith("192.168.") or host.startswith("10.") or host.startswith("172.16.")):
+        return False, "Offline · Cloud server cannot route to private LAN IP (192.168.x)"
+
     # 2. Fast HTTP request with short 0.8s timeout and non-persistent Connection: close
     url = f"http://{host}:{port}/mask?v={wire_mask}"
     try:
@@ -317,7 +321,7 @@ def _send_fast_cmd(host, port, wire_mask):
     except Exception as e:
         err = str(e)
         if "10061" in err or "refused" in err:
-            return False, "Offline · Port 80 refused"
+            return False, "Offline · Port 80 refused (Check Wi-Fi/Power)"
         elif "timed out" in err or "timeout" in err:
             return False, "Offline · Connection timed out"
         elif "11001" in err:
@@ -348,13 +352,29 @@ def _sync_single_room(r):
             }
 
 def _poll_single_host(h, p):
+    if os.getenv("VERCEL") == "1" and (h.startswith("192.168.") or h.startswith("10.") or h.startswith("172.16.")):
+        ok = False
+        err = "Offline · Cloud cannot reach local LAN (192.168.x)"
+        now_str = time.strftime("%H:%M:%S")
+        for other in ROOMS:
+            other_url = other.get("esp32_url", "").replace("http://", "").replace("https://", "").split("/")[0].split(":")[0]
+            if other_url == h:
+                room_states[other["id"]] = {
+                    "online": False,
+                    "error": err,
+                    "last": now_str,
+                    "url": other.get("esp32_url", ""),
+                    "mask": get_room_wire_mask(other)
+                }
+        return
+
     try:
         s = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
         s.settimeout(0.35)
         res = s.connect_ex((h, p))
         s.close()
         ok = (res == 0)
-        err = "" if ok else ("Offline · Connection timed out" if res == 10060 else "Offline · Port 80 refused")
+        err = "" if ok else ("Offline · Connection timed out" if res == 10060 else "Offline · Port 80 refused (Check Wi-Fi/Power)")
     except Exception as ex:
         ok = False
         err = f"Offline · {str(ex)[:25]}"

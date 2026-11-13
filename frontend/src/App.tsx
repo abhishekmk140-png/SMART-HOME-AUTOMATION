@@ -1035,9 +1035,16 @@ function Rel({ toast }: any) {
           </div>
         </div>
       ) : (
-        <div className="row sb mut" style={{ fontSize: 11 }}>
-          <span>Target IP: <span style={{ fontFamily: 'monospace', color: '#38BDF8', fontWeight: 700 }}>{currentUrl}</span> ({activeBoard?.name || 'Board'})</span>
-          {activeBoard?.error ? <span style={{ color: '#EF4444' }}>{activeBoard.error}</span> : r.error && <span style={{ color: '#EF4444' }}>{r.error}</span>}
+        <div className="col g4">
+          <div className="row sb mut" style={{ fontSize: 11 }}>
+            <span>Target IP: <span style={{ fontFamily: 'monospace', color: '#38BDF8', fontWeight: 700 }}>{currentUrl}</span> ({activeBoard?.name || 'Board'})</span>
+            {activeBoard?.error ? <span style={{ color: '#EF4444' }}>{activeBoard.error}</span> : r.error && <span style={{ color: '#EF4444' }}>{r.error}</span>}
+          </div>
+          {typeof window !== 'undefined' && window.location.hostname.includes('vercel.app') && String(currentUrl).includes('192.168.') && (
+            <div style={{ fontSize: 11, color: '#F59E0B', background: 'rgba(245,158,11,0.08)', border: '1px solid rgba(245,158,11,0.2)', padding: '5px 10px', borderRadius: 8, marginTop: 4 }}>
+              💡 <b>Cloud Notice:</b> Vercel runs in the public cloud and cannot reach your private home Wi-Fi IP (<code>{currentUrl}</code>). To control hardware, run the app locally on your laptop on the same Wi-Fi, or use an ngrok / Cloudflare tunnel.
+            </div>
+          )}
         </div>
       )}
     </div>
