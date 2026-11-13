@@ -358,12 +358,15 @@ export default function App() {
   const inFlightRef = useRef(false)
   const prevRoomsHash = useRef('')
   const prevRulesHash = useRef('')
+  const lastActionTs = useRef(0)
 
   const load = useCallback(async () => {
     if (inFlightRef.current || (typeof document !== 'undefined' && document.hidden)) return
+    if (Date.now() - lastActionTs.current < 3500) return
     inFlightRef.current = true
     try {
       const [rms, rls] = await Promise.all([api.rooms(), api.rules()])
+      if (Date.now() - lastActionTs.current < 3500) return
       const rmsHash = JSON.stringify(rms)
       if (rmsHash !== prevRoomsHash.current) {
         prevRoomsHash.current = rmsHash
@@ -390,66 +393,83 @@ export default function App() {
 
   // Instant optimistic device toggle (Lights, Fans, ACs, Switches) - 0ms delay!
   const onToggleDev = (rid: string, did: string) => {
-    setRooms(prev => prev.map(r => {
-      if (r.id !== rid) return r
-      const allD = [...r.lights, ...r.fans, ...(r.acs || []), ...r.switches]
-      const target = allD.find(x => x.id === did)
-      const ch = target?.relayChannel
-      const newOn = target ? !target.isOn : false
-      joySound.toggleDev(newOn)
-      const flip = (d: Dev) => {
-        if (ch && d.relayChannel === ch) return { ...d, isOn: newOn }
-        if (d.id === did) return { ...d, isOn: !d.isOn }
-        return d
-      }
-      return {
-        ...r,
-        lights: r.lights.map(flip),
-        fans: r.fans.map(flip),
-        acs: (r.acs || []).map(flip),
-        switches: r.switches.map(flip),
-      }
-    }))
-    api.toggle(rid, did).catch(() => load())
+    lastActionTs.current = Date.now()
+    setRooms(prev => {
+      const updated = prev.map(r => {
+        if (r.id !== rid) return r
+        const allD = [...r.lights, ...r.fans, ...(r.acs || []), ...r.switches]
+        const target = allD.find(x => x.id === did)
+        const ch = target?.relayChannel
+        const newOn = target ? !target.isOn : false
+        joySound.toggleDev(newOn)
+        const flip = (d: Dev) => {
+          if (ch && d.relayChannel === ch) return { ...d, isOn: newOn }
+          if (d.id === did) return { ...d, isOn: !d.isOn }
+          return d
+        }
+        return {
+          ...r,
+          lights: r.lights.map(flip),
+          fans: r.fans.map(flip),
+          acs: (r.acs || []).map(flip),
+          switches: r.switches.map(flip),
+        }
+      })
+      prevRoomsHash.current = JSON.stringify(updated)
+      return updated
+    })
+    api.toggle(rid, did).catch(() => {})
   }
 
   // Instant optimistic room node toggle - 0ms delay!
   const onToggleRoom = (rid: string) => {
+    lastActionTs.current = Date.now()
     let nextOnState = false
-    setRooms(prev => prev.map(r => {
-      if (r.id !== rid) return r
-      const allDevs = r.lights.concat(r.fans, r.acs || [], r.switches)
-      const nextOn = !allDevs.some(d => d.isOn)
-      nextOnState = nextOn
-      const setDev = (d: Dev) => ({ ...d, isOn: nextOn })
-      return {
-        ...r,
-        lights: r.lights.map(setDev),
-        fans: r.fans.map(setDev),
-        acs: (r.acs || []).map(setDev),
-        switches: r.switches.map(setDev),
-      }
-    }))
+    setRooms(prev => {
+      const updated = prev.map(r => {
+        if (r.id !== rid) return r
+        const allDevs = r.lights.concat(r.fans, r.acs || [], r.switches)
+        const nextOn = !allDevs.some(d => d.isOn)
+        nextOnState = nextOn
+        const setDev = (d: Dev) => ({ ...d, isOn: nextOn })
+        return {
+          ...r,
+          lights: r.lights.map(setDev),
+          fans: r.fans.map(setDev),
+          acs: (r.acs || []).map(setDev),
+          switches: r.switches.map(setDev),
+        }
+      })
+      prevRoomsHash.current = JSON.stringify(updated)
+      return updated
+    })
     joySound.toggleDev(nextOnState)
     if (nextOnState) burstJoy()
-    api.toggleRoom(rid).catch(() => load())
+    api.toggleRoom(rid).catch(() => {})
   }
 
   // Instant optimistic all-in-room toggle
   const onToggleAll = (rid: string, isOn: boolean) => {
+    lastActionTs.current = Date.now()
     joySound.toggleDev(isOn)
     if (isOn) burstJoy()
-    setRooms(prev => prev.map(r => {
-      if (r.id !== rid) return r
-      const setDev = (d: Dev) => ({ ...d, isOn })
-      return {
-        ...r,
-        lights: r.lights.map(setDev),
-        fans: r.fans.map(setDev),
-        acs: (r.acs || []).map(setDev),
-        switches: r.switches.map(setDev),
-      }
-    }))
+    setRooms(prev => {
+      const updated = prev.map(r => {
+        if (r.id !== rid) return r
+        const setDev = (d: Dev) => ({ ...d, isOn })
+        return {
+          ...r,
+          lights: r.lights.map(setDev),
+          fans: r.fans.map(setDev),
+          acs: (r.acs || []).map(setDev),
+          switches: r.switches.map(setDev),
+        }
+      })
+      prevRoomsHash.current = JSON.stringify(updated)
+      return updated
+    })
+    api.all(rid, isOn).catch(() => {})
+  }
     api.all(rid, isOn).catch(() => load())
   }
 
@@ -793,9 +813,12 @@ function Rel({ toast, reloadRooms }: any) {
   const [editing, setEditing] = useState(false)
   const [url, setUrl] = useState('')
   const [busy, setBusy] = useState(false)
+  const lastChannelActionTs = useRef(0)
 
   const refresh = () => {
+    if (Date.now() - lastChannelActionTs.current < 3000) return
     api.relays().then(data => {
+      if (Date.now() - lastChannelActionTs.current < 3000) return
       setR(data)
       if (!editing) {
         if (data.boards && data.boards[selectedBoardIdx]) {
@@ -845,6 +868,7 @@ function Rel({ toast, reloadRooms }: any) {
   }
 
   const toggleChannel = async (ch: number) => {
+    lastChannelActionTs.current = Date.now()
     joySound.pop()
     if (activeBoard) {
       setR((prev: any) => {
@@ -859,14 +883,13 @@ function Rel({ toast, reloadRooms }: any) {
       })
       api.toggleRoomChannel(activeBoard.id, ch).then(() => {
         if (reloadRooms) reloadRooms()
-        refresh()
-      }).catch(() => refresh())
+      }).catch(() => {})
       if (toast) toast(`${activeBoard.name} · CH${ch} toggled`)
     } else {
       api.toggleChannel(ch).then((updated: any) => {
         setR((prev: any) => ({ ...prev, ...updated }))
         if (reloadRooms) reloadRooms()
-      }).catch(() => refresh())
+      }).catch(() => {})
     }
   }
 
