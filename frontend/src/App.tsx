@@ -18,13 +18,30 @@ const sSensor = (s: Sensor, t: 'temperature' | 'humidity' | 'co2') => {
   return { color: v < 35 ? '#10B981' : v < 115 ? '#F59E0B' : '#EF4444', text: v < 35 ? 'Good' : v < 115 ? 'Moderate' : 'High', icon: 'co2', pct: v / 250 }
 }
 
-function Header({ title, isFull, onToggleFull, onOpenMobile, onLock, livelyOn, onToggleLively }: any) {
+function Header({ title, isFull, onToggleFull, onOpenMobile, onLock, livelyOn, onToggleLively, installPrompt, onInstallApp }: any) {
   const [soundOn, setSoundOn] = useState(joySound.enabled)
   return (
     <div className="hdr">
       <div className="row g10">
         <h1>{title}</h1>
         <span className="live-pill"><span className="dot" />Live</span>
+        {installPrompt && (
+          <button
+            className="pill joy-bounce"
+            style={{
+              padding: '4px 10px',
+              fontSize: 11,
+              background: 'linear-gradient(135deg, #4F46E5, #06B6D4)',
+              color: '#fff',
+              border: 'none',
+              gap: 4
+            }}
+            onClick={() => { joySound.pop(); onInstallApp() }}
+            title="Install Official App to Phone / PC"
+          >
+            <I n="install_mobile" s={14} c="#fff" /> Install App
+          </button>
+        )}
       </div>
       <div className="row g6">
         <button
@@ -195,7 +212,7 @@ function BiometricLockScreen({ onUnlock }: { onUnlock: () => void }) {
 }
 
 /* Modal for Mobile Phone Access & QR Code */
-function MobileAccessModal({ close, onLock }: any) {
+function MobileAccessModal({ close, onLock, installPrompt, onInstallApp }: any) {
   const mobileUrl = typeof window !== 'undefined' && window.location.hostname !== 'localhost' && window.location.hostname !== '127.0.0.1'
     ? `${window.location.protocol}//${window.location.host}/?mobile=1&biometric=1`
     : 'http://192.168.1.20:8000/?mobile=1&biometric=1'
@@ -211,19 +228,66 @@ function MobileAccessModal({ close, onLock }: any) {
 
   return (
     <div className="modal" onClick={close}>
-      <div className="dlg col g12" onClick={e => e.stopPropagation()} style={{ maxWidth: 440, textAlign: 'center' }}>
+      <div className="dlg col g12" onClick={e => e.stopPropagation()} style={{ maxWidth: 460, textAlign: 'center' }}>
         <div className="row sb">
           <div className="row g8">
             <div style={{ width: 36, height: 36, borderRadius: 10, background: 'rgba(2,132,199,0.12)', display: 'grid', placeItems: 'center' }}>
               <I n="phone_iphone" c="#0284C7" s={22} />
             </div>
-            <b style={{ fontSize: 16 }}>Mobile Phone Access</b>
+            <b style={{ fontSize: 16 }}>Official Mobile App & Access</b>
           </div>
           <button className="circ" style={{ background: 'none' }} onClick={close}><I n="close" s={20} /></button>
         </div>
 
-        <div className="mut" style={{ fontSize: 13, lineHeight: 1.4 }}>
-          Scan the QR Code with your phone camera or open the link below on the same Wi-Fi network (<b>Airtel_AIOTA.tech</b>).
+        <div className="col g8" style={{ marginTop: 2 }}>
+          {installPrompt ? (
+            <button
+              className="btn"
+              style={{
+                width: '100%',
+                padding: '12px 16px',
+                background: 'linear-gradient(135deg, #4F46E5, #06B6D4)',
+                fontWeight: 700,
+                fontSize: 14,
+                boxShadow: '0 6px 20px rgba(79, 70, 229, 0.4)'
+              }}
+              onClick={() => { if (onInstallApp) onInstallApp(); close() }}
+            >
+              <I n="install_mobile" s={20} c="#fff" />
+              📲 Install Official App to Home Screen (1-Tap)
+            </button>
+          ) : (
+            <div style={{ background: 'rgba(79, 70, 229, 0.12)', border: '1px solid rgba(79, 70, 229, 0.3)', borderRadius: 12, padding: '10px 14px', textAlign: 'left', fontSize: 12 }}>
+              <b style={{ color: '#818CF8' }}>📱 Install as Official Mobile App on your Phone:</b>
+              <div style={{ marginTop: 5, color: 'rgba(255,255,255,0.85)', lineHeight: 1.5 }}>
+                • <b>Android Chrome:</b> Tap browser menu (⋮) → <b>"Install App"</b> or "Add to Home Screen"<br/>
+                • <b>iPhone Safari:</b> Tap Share (<span style={{ fontSize: 13 }}>⎋</span>) → <b>"Add to Home Screen"</b>
+              </div>
+            </div>
+          )}
+
+          <a
+            href="https://www.pwabuilder.com/reportcard?site=https://smart-home-automation-arkg.vercel.app"
+            target="_blank"
+            rel="noreferrer"
+            className="btn o"
+            style={{
+              width: '100%',
+              padding: '10px 14px',
+              textDecoration: 'none',
+              fontSize: 13,
+              justifyContent: 'center',
+              display: 'flex',
+              gap: 6
+            }}
+          >
+            <I n="android" s={18} c="#10B981" />
+            Generate / Download Android APK (PWABuilder)
+          </a>
+        </div>
+
+        <div className="mut" style={{ fontSize: 12, lineHeight: 1.4, marginTop: 4 }}>
+          Or scan the QR Code with your phone camera to launch on mobile:
         </div>
 
         <div style={{ display: 'grid', placeItems: 'center', margin: '8px 0' }}>
@@ -388,6 +452,29 @@ export default function App() {
   )
   const [isLocked, setIsLocked] = useState(Boolean(isMobileUrl))
   const [mobileModal, setMobileModal] = useState(false)
+  const [installPrompt, setInstallPrompt] = useState<any>(null)
+
+  useEffect(() => {
+    const handler = (e: any) => {
+      e.preventDefault()
+      setInstallPrompt(e)
+    }
+    window.addEventListener('beforeinstallprompt', handler)
+    return () => window.removeEventListener('beforeinstallprompt', handler)
+  }, [])
+
+  const onInstallApp = async () => {
+    if (installPrompt) {
+      installPrompt.prompt()
+      const choice = await installPrompt.userChoice
+      if (choice?.outcome === 'accepted') {
+        setInstallPrompt(null)
+        toast('Smart Home App installed to home screen! 🎉')
+      }
+    } else {
+      setMobileModal(true)
+    }
+  }
 
   const isUrlFull = typeof window !== 'undefined' && (
     new URLSearchParams(window.location.search).get('fullscreen') === '1' ||
@@ -591,14 +678,14 @@ export default function App() {
     {livelyOn && <Lively3DSmartHomeBg />}
     <div className={`app ${isFull ? 'fullscreen' : ''}`}>
       {isLocked && <BiometricLockScreen onUnlock={() => { setIsLocked(false); localStorage.removeItem('biometric_locked'); toast('Biometric Verified — Welcome!') }} />}
-      {mobileModal && <MobileAccessModal close={() => setMobileModal(false)} onLock={() => setIsLocked(true)} />}
+      {mobileModal && <MobileAccessModal close={() => setMobileModal(false)} onLock={() => setIsLocked(true)} installPrompt={installPrompt} onInstallApp={onInstallApp} />}
       {!ok && <div style={{ background: '#FFDAD6', color: '#BA1A1A', fontSize: 12, padding: '6px 20px', textAlign: 'center' }}>Backend not reachable at {baseUrl()} — check Settings</div>}
       {roomId ? <RoomDetail room={room} back={() => setRoomId(null)} onToggleDev={onToggleDev} onToggleAll={onToggleAll} act={act} toast={toast} onOpenMobile={() => setMobileModal(true)} onLock={() => setIsLocked(true)} />
         : <>
-          {tab === 0 && <Dashboard rooms={rooms} M={M} onToggleRoom={onToggleRoom} onScene={onScene} reloadRooms={load} isFull={isFull} onToggleFull={toggleFull} onOpenMobile={() => setMobileModal(true)} onLock={() => setIsLocked(true)} act={act} toast={toast} open={setRoomId} livelyOn={livelyOn} onToggleLively={toggleLively} />}
-          {tab === 1 && <Analytics rooms={rooms} M={M} isFull={isFull} onToggleFull={toggleFull} is3D={is3D} onToggle3D={toggle3D} onOpenMobile={() => setMobileModal(true)} onLock={() => setIsLocked(true)} livelyOn={livelyOn} onToggleLively={toggleLively} />}
-          {tab === 2 && <Automations rules={rules} act={act} isFull={isFull} onToggleFull={toggleFull} is3D={is3D} onToggle3D={toggle3D} onOpenMobile={() => setMobileModal(true)} onLock={() => setIsLocked(true)} livelyOn={livelyOn} onToggleLively={toggleLively} />}
-          {tab === 3 && <Settings ok={ok} reload={load} toast={toast} isFull={isFull} onToggleFull={toggleFull} is3D={is3D} onToggle3D={toggle3D} onOpenMobile={() => setMobileModal(true)} onLock={() => setIsLocked(true)} livelyOn={livelyOn} onToggleLively={toggleLively} />}
+          {tab === 0 && <Dashboard rooms={rooms} M={M} onToggleRoom={onToggleRoom} onScene={onScene} reloadRooms={load} isFull={isFull} onToggleFull={toggleFull} onOpenMobile={() => setMobileModal(true)} onLock={() => setIsLocked(true)} act={act} toast={toast} open={setRoomId} livelyOn={livelyOn} onToggleLively={toggleLively} installPrompt={installPrompt} onInstallApp={onInstallApp} />}
+          {tab === 1 && <Analytics rooms={rooms} M={M} isFull={isFull} onToggleFull={toggleFull} is3D={is3D} onToggle3D={toggle3D} onOpenMobile={() => setMobileModal(true)} onLock={() => setIsLocked(true)} livelyOn={livelyOn} onToggleLively={toggleLively} installPrompt={installPrompt} onInstallApp={onInstallApp} />}
+          {tab === 2 && <Automations rules={rules} act={act} isFull={isFull} onToggleFull={toggleFull} is3D={is3D} onToggle3D={toggle3D} onOpenMobile={() => setMobileModal(true)} onLock={() => setIsLocked(true)} livelyOn={livelyOn} onToggleLively={toggleLively} installPrompt={installPrompt} onInstallApp={onInstallApp} />}
+          {tab === 3 && <Settings ok={ok} reload={load} toast={toast} isFull={isFull} onToggleFull={toggleFull} is3D={is3D} onToggle3D={toggle3D} onOpenMobile={() => setMobileModal(true)} onLock={() => setIsLocked(true)} livelyOn={livelyOn} onToggleLively={toggleLively} installPrompt={installPrompt} onInstallApp={onInstallApp} />}
         <div className="nav">
           {[
             { id: 'dashboard', label: 'Dashboard', icon: 'dashboard' },
@@ -645,7 +732,7 @@ const SCENE_CLASSES: Record<string, string> = {
   'Eco Mode': 'pill-scene-eco'
 }
 
-function Dashboard({ rooms, M, onToggleRoom, onScene, reloadRooms, isFull, onToggleFull, onOpenMobile, onLock, act, toast, open, livelyOn, onToggleLively }: any) {
+function Dashboard({ rooms, M, onToggleRoom, onScene, reloadRooms, isFull, onToggleFull, onOpenMobile, onLock, act, toast, open, livelyOn, onToggleLively, installPrompt, onInstallApp }: any) {
   const [filter, setFilter] = useState('All Rooms'), [scene, setScene] = useState('All On')
   const [adding, setAdding] = useState(false), [sheet, setSheet] = useState(false)
   const [editRoom, setEditRoom] = useState<Room | null>(null), [delRoom, setDelRoom] = useState<Room | null>(null)
@@ -693,7 +780,7 @@ function Dashboard({ rooms, M, onToggleRoom, onScene, reloadRooms, isFull, onTog
       <div style={{ fontSize: 20, fontWeight: 800, letterSpacing: -.3, marginTop: 2 }}>{val}</div>
     </div>
   )
-  return <><Header title="Dashboard" isFull={isFull} onToggleFull={onToggleFull} onOpenMobile={onOpenMobile} onLock={onLock} livelyOn={livelyOn} onToggleLively={onToggleLively} />
+  return <><Header title="Dashboard" isFull={isFull} onToggleFull={onToggleFull} onOpenMobile={onOpenMobile} onLock={onLock} livelyOn={livelyOn} onToggleLively={onToggleLively} installPrompt={installPrompt} onInstallApp={onInstallApp} />
   <div className="scroll col" style={{ gap: 18 }}>
     <div className="row sb" style={{ flexWrap: 'wrap', gap: 12 }}>
       <div>
@@ -1534,7 +1621,7 @@ function RoomDetail({ room, back, onToggleDev, onToggleAll, act, toast }: any) {
 }
 
 /* ---------------- Analytics ---------------- */
-function Analytics({ rooms = [], M, isFull, onToggleFull, is3D, onToggle3D, onOpenMobile, onLock, livelyOn, onToggleLively }: any) {
+function Analytics({ rooms = [], M, isFull, onToggleFull, is3D, onToggle3D, onOpenMobile, onLock, livelyOn, onToggleLively, installPrompt, onInstallApp }: any) {
   const [rng, setRng] = useState('24 Hours')
   const [selectedRoomId, setSelectedRoomId] = useState('all')
   const [dropdownOpen, setDropdownOpen] = useState(false)
@@ -1605,7 +1692,7 @@ function Analytics({ rooms = [], M, isFull, onToggleFull, is3D, onToggle3D, onOp
     </div>
   )
   const path = (ys: number[]) => ys.map((y, i) => `${i ? 'L' : 'M'}${i * 50} ${y}`).join(' ')
-  return <><Header title="Analytics" isFull={isFull} onToggleFull={onToggleFull} is3D={is3D} onToggle3D={onToggle3D} onOpenMobile={onOpenMobile} onLock={onLock} livelyOn={livelyOn} onToggleLively={onToggleLively} />
+  return <><Header title="Analytics" isFull={isFull} onToggleFull={onToggleFull} is3D={is3D} onToggle3D={onToggle3D} onOpenMobile={onOpenMobile} onLock={onLock} livelyOn={livelyOn} onToggleLively={onToggleLively} installPrompt={installPrompt} onInstallApp={onInstallApp} />
   <div className="scroll col" style={{ gap: 22 }} onClick={() => dropdownOpen && setDropdownOpen(false)}>
     {is3D && (
       <div className="hero-3d">
@@ -2088,12 +2175,12 @@ function Analytics({ rooms = [], M, isFull, onToggleFull, is3D, onToggle3D, onOp
 }
 
 /* ---------------- Automations ---------------- */
-function Automations({ rules, act, isFull, onToggleFull, is3D, onToggle3D, onOpenMobile, onLock, livelyOn, onToggleLively }: any) {
+function Automations({ rules, act, isFull, onToggleFull, is3D, onToggle3D, onOpenMobile, onLock, livelyOn, onToggleLively, installPrompt, onInstallApp }: any) {
   const [dlg, setDlg] = useState(false), [f, setF] = useState({ title: '', trig: 'temperature', th: 26, action: '' })
   const ic: any = { temperature: 'thermostat_auto', co2: 'air', humidity: 'water_drop', schedule: 'bedtime' }
   const badge: any = { temperature: 'Climate', co2: 'Health', humidity: 'Climate', schedule: 'Power' }
   const desc = () => f.trig === 'temperature' ? `Temp > ${f.th}°C` : f.trig === 'co2' ? `Air Quality > ${f.th} µg/m³` : f.trig === 'humidity' ? `Humidity > ${f.th}%` : `Time > ${f.th}:00`
-  return <><Header title="Automations" isFull={isFull} onToggleFull={onToggleFull} is3D={is3D} onToggle3D={onToggle3D} onOpenMobile={onOpenMobile} onLock={onLock} livelyOn={livelyOn} onToggleLively={onToggleLively} />
+  return <><Header title="Automations" isFull={isFull} onToggleFull={onToggleFull} is3D={is3D} onToggle3D={onToggle3D} onOpenMobile={onOpenMobile} onLock={onLock} livelyOn={livelyOn} onToggleLively={onToggleLively} installPrompt={installPrompt} onInstallApp={onInstallApp} />
   <div className="scroll col" style={{ gap: 14, paddingBottom: 92 }}>
     {is3D && (
       <div className="hero-3d">
@@ -2129,11 +2216,11 @@ function Automations({ rules, act, isFull, onToggleFull, is3D, onToggle3D, onOpe
 }
 
 /* ---------------- Settings ---------------- */
-function Settings({ ok, reload, toast, isFull, onToggleFull, is3D, onToggle3D, onOpenMobile, onLock, livelyOn, onToggleLively }: any) {
+function Settings({ ok, reload, toast, isFull, onToggleFull, is3D, onToggle3D, onOpenMobile, onLock, livelyOn, onToggleLively, installPrompt, onInstallApp }: any) {
   const [url, setUrl] = useState(baseUrl()), [busy, setBusy] = useState(false), [bio, setBio] = useState(localStorage.getItem('biometric_enabled') === '1'), [sql, setSql] = useState(true)
   const test = async () => { setBusy(true); setBaseUrl(url); await reload(); const h = await api.health(); setBusy(false); setUrl(baseUrl()); toast(h ? 'Connection Successful!' : 'Could not reach server') }
   const Row = ({ ic, t, s, on, set }: any) => <div className="row sb" style={{ padding: '10px 0' }}><div className="row g12"><I n={ic} c="var(--pri)" /><div><b style={{ fontSize: 14 }}>{t}</b>{s && <div className="mut">{s}</div>}</div></div>{set && <Sw on={on} set={set} />}</div>
-  return <><Header title="Settings" isFull={isFull} onToggleFull={onToggleFull} is3D={is3D} onToggle3D={onToggle3D} onOpenMobile={onOpenMobile} onLock={onLock} livelyOn={livelyOn} onToggleLively={onToggleLively} />
+  return <><Header title="Settings" isFull={isFull} onToggleFull={onToggleFull} is3D={is3D} onToggle3D={onToggle3D} onOpenMobile={onOpenMobile} onLock={onLock} livelyOn={livelyOn} onToggleLively={onToggleLively} installPrompt={installPrompt} onInstallApp={onInstallApp} />
   <div className="scroll col" style={{ gap: 16 }}>
     {is3D && (
       <div className="hero-3d">

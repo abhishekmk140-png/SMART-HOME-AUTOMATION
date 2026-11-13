@@ -1,0 +1,14 @@
+{
+  "appId": "com.smarthome.iotapp",
+  "appName": "Smart Home IoT",
+  "webDir": "frontend/dist",
+  "bundledWebRuntime": false,
+  "server": {
+    "url": "https://smart-home-automation-arkg.vercel.app",
+    "cleartext": true
+  },
+  "android": {
+    "allowMixedContent": true,
+    "backgroundColor": "#090c14"
+  }
+}
