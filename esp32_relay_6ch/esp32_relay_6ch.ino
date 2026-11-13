@@ -24,14 +24,14 @@
 #if BOARD_ID == 1
   const char* ROOM_NAME = "Engineering Hub";
   const char* HOST_NAME = "esp32-hub";
-  IPAddress STATIC_IP(192, 168, 1, 11);
+  IPAddress STATIC_IP(192, 168, 1, 10);
   #define HAS_AM2315C true
   #define HAS_AIR_QUALITY false
   #define HAS_PIR false
 #elif BOARD_ID == 2
   const char* ROOM_NAME = "The Gallery";
   const char* HOST_NAME = "esp32-gallery";
-  IPAddress STATIC_IP(192, 168, 1, 10);
+  IPAddress STATIC_IP(192, 168, 1, 11);
   #define HAS_AM2315C false
   #define HAS_AIR_QUALITY true
   #define HAS_PIR false
