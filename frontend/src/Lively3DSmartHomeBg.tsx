@@ -24,7 +24,7 @@ export default function Lively3DSmartHomeBg() {
   const [scene, setScene] = useState<'villa' | 'core'>('villa')
   const [activeBeacon, setActiveBeacon] = useState<string | null>(null)
 
-  // 3D Parallax interpolation with direct GPU transforms & automatic idle sleep
+  // Ultra-Smooth 144Hz Delta-Time Parallax Engine (Hardware-Decoupled Refresh Rate)
   useEffect(() => {
     let currentX = 0
     let currentY = 0
@@ -32,19 +32,25 @@ export default function Lively3DSmartHomeBg() {
     let targetY = 0
     let animId: number
     let isRunning = false
+    let lastTime = performance.now()
 
-    const loop = () => {
+    const loop = (now: number) => {
+      const dt = Math.min((now - lastTime) / 1000, 0.033)
+      lastTime = now
+
+      // Time-constant exponential decay (12.0) guarantees identical 144Hz buttery smoothing
+      const blend = 1 - Math.exp(-12.0 * dt)
       const dx = targetX - currentX
       const dy = targetY - currentY
-      currentX += dx * 0.1
-      currentY += dy * 0.1
+      currentX += dx * blend
+      currentY += dy * blend
 
       if (stageRef.current) {
-        stageRef.current.style.transform = `perspective(1200px) rotateX(${-currentY * 0.5}deg) rotateY(${currentX * 0.5}deg) translate3d(${currentX * 3}px, ${currentY * 2}px, 0) scale(1.03)`
+        stageRef.current.style.transform = `perspective(1200px) rotateX(${-currentY * 0.45}deg) rotateY(${currentX * 0.45}deg) translate3d(${currentX * 2.8}px, ${currentY * 2}px, 0) scale(1.03)`
       }
 
-      // Automatically sleep the animation loop when motion settles to save 100% GPU/CPU!
-      if (Math.abs(dx) > 0.02 || Math.abs(dy) > 0.02) {
+      // Automatically sleep the animation loop when motion settles to keep 0% CPU/GPU overhead
+      if (Math.abs(dx) > 0.008 || Math.abs(dy) > 0.008) {
         animId = requestAnimationFrame(loop)
       } else {
         isRunning = false
@@ -54,11 +60,13 @@ export default function Lively3DSmartHomeBg() {
     const startLoop = () => {
       if (!isRunning) {
         isRunning = true
+        lastTime = performance.now()
         animId = requestAnimationFrame(loop)
       }
     }
 
-    const handleMouseMove = (e: MouseEvent) => {
+    // High-polling rate cursor/pointer listener (supports 144Hz - 1000Hz gaming mice)
+    const handlePointerMove = (e: PointerEvent | MouseEvent) => {
       const { innerWidth: w, innerHeight: h } = window
       targetX = ((e.clientX - w / 2) / (w / 2)) * 10
       targetY = ((e.clientY - h / 2) / (h / 2)) * 8
@@ -73,7 +81,7 @@ export default function Lively3DSmartHomeBg() {
       }
     }
 
-    window.addEventListener('mousemove', handleMouseMove, { passive: true })
+    window.addEventListener('pointermove', handlePointerMove, { passive: true })
     if (window.DeviceOrientationEvent) {
       window.addEventListener('deviceorientation', handleDeviceOrientation, { passive: true })
     }
@@ -81,7 +89,7 @@ export default function Lively3DSmartHomeBg() {
 
     return () => {
       cancelAnimationFrame(animId)
-      window.removeEventListener('mousemove', handleMouseMove)
+      window.removeEventListener('pointermove', handlePointerMove)
       window.removeEventListener('deviceorientation', handleDeviceOrientation)
     }
   }, [])

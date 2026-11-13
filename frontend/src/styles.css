@@ -22,6 +22,7 @@
   box-sizing: border-box;
   margin: 0;
   -webkit-tap-highlight-color: transparent;
+  text-rendering: optimizeSpeed;
 }
 
 html, body {
@@ -32,6 +33,7 @@ html, body {
   min-height: 100vh;
   min-height: 100dvh;
   -webkit-font-smoothing: antialiased;
+  -moz-osx-font-smoothing: grayscale;
 }
 
 /* Custom Sleek Scrollbar */
@@ -159,13 +161,17 @@ html, body {
   animation: joyDotPulse 2s infinite;
 }
 
-/* Scrollable Container & Flex Helpers */
+/* 144Hz Hardware-Composited Scroll Container */
 .scroll {
   flex: 1;
   overflow-y: auto;
   overflow-x: hidden;
   padding: 18px 20px 28px;
   scroll-behavior: smooth;
+  -webkit-overflow-scrolling: touch;
+  overscroll-behavior-y: contain;
+  contain: content;
+  transform: translateZ(0);
 }
 
 @media (min-width: 768px) {
@@ -290,7 +296,7 @@ html, body {
 }
 .mi.o { font-family: 'Material Icons Outlined'; }
 
-/* Frosted Bento Glass Cards */
+/* Frosted Bento Glass Cards (144Hz Hardware Promoted) */
 .card {
   background: rgba(18, 25, 42, 0.88);
   backdrop-filter: blur(8px);
@@ -300,6 +306,13 @@ html, body {
   box-shadow: 0 10px 30px rgba(0, 0, 0, 0.38), inset 0 1px 0 rgba(255, 255, 255, 0.06);
   color: var(--on);
   transition: transform 0.22s cubic-bezier(0.22, 1, 0.36, 1), box-shadow 0.22s ease, border-color 0.22s ease, background 0.22s ease;
+  transform: translateZ(0);
+  backface-visibility: hidden;
+}
+
+.rooms-grid > .card {
+  content-visibility: auto;
+  contain-intrinsic-size: 0 140px;
 }
 
 @media (hover: hover) {
@@ -802,6 +815,7 @@ html, body {
   animation: spin 0.8s linear infinite !important;
   transform-origin: center center !important;
   display: inline-block !important;
+  will-change: transform;
 }
 
 /* Blinking ON Badge for LED Lights */
@@ -873,6 +887,9 @@ html, body {
 
 .dev-card {
   transition: transform 0.2s cubic-bezier(0.22, 1, 0.36, 1), box-shadow 0.2s ease, border-color 0.2s ease, background 0.2s ease;
+  content-visibility: auto;
+  contain-intrinsic-size: 0 130px;
+  transform: translateZ(0);
 }
 @media (hover: hover) {
   .dev-card:hover {
