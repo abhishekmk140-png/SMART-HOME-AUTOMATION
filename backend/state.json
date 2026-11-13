@@ -1,0 +1,277 @@
+{
+  "rooms": [
+    {
+      "id": "room_r1793692482928",
+      "name": "THE GALLERY",
+      "category": "Hall",
+      "esp32_url": "http://192.168.1.11",
+      "lights": [
+        {
+          "id": "r1793692482928_light_1",
+          "name": "LEDs (11x)",
+          "type": "light",
+          "isOn": false,
+          "value": 100,
+          "relayChannel": 1
+        },
+        {
+          "id": "r1793692482928_light_2",
+          "name": "LEDs (2x)",
+          "type": "light",
+          "isOn": false,
+          "value": 100,
+          "relayChannel": 2
+        },
+        {
+          "id": "r1793692482928_light_3",
+          "name": "LEDs (2x)",
+          "type": "light",
+          "isOn": false,
+          "value": 100,
+          "relayChannel": 3
+        },
+        {
+          "id": "r1793692482928_light_4",
+          "name": "LEDs (2x)",
+          "type": "light",
+          "isOn": false,
+          "value": 100,
+          "relayChannel": 4
+        }
+      ],
+      "fans": [
+        {
+          "id": "r1793692482928_fan_1",
+          "name": "FAN 1",
+          "type": "fan",
+          "isOn": false,
+          "value": 2,
+          "relayChannel": 5
+        },
+        {
+          "id": "r1793692482928_fan_2",
+          "name": "FAN 2",
+          "type": "fan",
+          "isOn": false,
+          "value": 2,
+          "relayChannel": 6
+        }
+      ],
+      "switches": [],
+      "tempSensor": {
+        "id": "r1793692482928_sensor_temp",
+        "name": "Temperature",
+        "value": 29.6,
+        "unit": "\u00b0C"
+      },
+      "humSensor": {
+        "id": "r1793692482928_sensor_hum",
+        "name": "Humidity",
+        "value": 28.6,
+        "unit": "%"
+      },
+      "co2Sensor": {
+        "id": "r1793692482928_sensor_co2",
+        "name": "Air Quality",
+        "value": 24,
+        "unit": "\u00b5g/m\u00b3"
+      },
+      "acs": [],
+      "has_am2315c": true
+    },
+    {
+      "id": "room_r1793692559305",
+      "name": "ENGINEERING HUB",
+      "category": "Development Area",
+      "esp32_url": "http://192.168.1.10",
+      "lights": [
+        {
+          "id": "r1793692559305_light_1",
+          "name": "AC Bay LEDs (2x)",
+          "type": "light",
+          "isOn": false,
+          "value": 100,
+          "relayChannel": 1
+        },
+        {
+          "id": "r1793692559305_light_2",
+          "name": "Fan Bay LEDs (2x)",
+          "type": "light",
+          "isOn": false,
+          "value": 100,
+          "relayChannel": 2
+        },
+        {
+          "id": "r1793692559305_light_3",
+          "name": "Fan Bay Rear LEDs (2x)",
+          "type": "light",
+          "isOn": false,
+          "value": 100,
+          "relayChannel": 3
+        }
+      ],
+      "fans": [
+        {
+          "id": "r1793692559305_fan_1",
+          "name": "FAN 1",
+          "type": "fan",
+          "isOn": false,
+          "value": 2,
+          "relayChannel": 4
+        },
+        {
+          "id": "r1793692559305_fan_2",
+          "name": "FAN 2",
+          "type": "fan",
+          "isOn": false,
+          "value": 2,
+          "relayChannel": 5
+        }
+      ],
+      "switches": [
+        {
+          "id": "room_r1793692559305_custom_1793705803457",
+          "name": "20A Power Switch",
+          "type": "switchDevice",
+          "isOn": false,
+          "value": 1,
+          "relayChannel": 6
+        }
+      ],
+      "tempSensor": {
+        "id": "r1793692559305_sensor_temp",
+        "name": "Temperature",
+        "value": 24.5,
+        "unit": "\u00b0C"
+      },
+      "humSensor": {
+        "id": "r1793692559305_sensor_hum",
+        "name": "Humidity",
+        "value": 48,
+        "unit": "%"
+      },
+      "co2Sensor": {
+        "id": "r1793692559305_sensor_co2",
+        "name": "Air Quality",
+        "value": 24.0,
+        "unit": "\u00b5g/m\u00b3"
+      },
+      "acs": [],
+      "has_aqi": true
+    },
+    {
+      "id": "room_r1793692575123",
+      "name": "CONFERENCE",
+      "category": "Conference",
+      "esp32_url": "http://192.168.1.14",
+      "lights": [
+        {
+          "id": "r1793692575123_light_1",
+          "name": "LED 1 (1x)",
+          "type": "light",
+          "isOn": false,
+          "value": 100,
+          "relayChannel": 1
+        },
+        {
+          "id": "r1793692575123_light_2",
+          "name": "LED 2 (1x)",
+          "type": "light",
+          "isOn": false,
+          "value": 100,
+          "relayChannel": 2
+        },
+        {
+          "id": "r1793692575123_light_3",
+          "name": "LED 3 (1x)",
+          "type": "light",
+          "isOn": false,
+          "value": 100,
+          "relayChannel": 3
+        },
+        {
+          "id": "r1793692575123_light_4",
+          "name": "LED 4 (1x)",
+          "type": "light",
+          "isOn": false,
+          "value": 100,
+          "relayChannel": 4
+        }
+      ],
+      "fans": [
+        {
+          "id": "r1793692575123_fan_1",
+          "name": "FAN 1",
+          "type": "fan",
+          "isOn": false,
+          "value": 2,
+          "relayChannel": 5
+        }
+      ],
+      "switches": [],
+      "tempSensor": {
+        "id": "r1793692575123_sensor_temp",
+        "name": "Temperature",
+        "value": 24.5,
+        "unit": "\u00b0C"
+      },
+      "humSensor": {
+        "id": "r1793692575123_sensor_hum",
+        "name": "Humidity",
+        "value": 48,
+        "unit": "%"
+      },
+      "co2Sensor": {
+        "id": "r1793692575123_sensor_co2",
+        "name": "Air Quality",
+        "value": 24,
+        "unit": "\u00b5g/m\u00b3"
+      },
+      "acs": [],
+      "occupancy": {
+        "occupied": true,
+        "status": "Occupied",
+        "pir": false,
+        "pir1": false,
+        "seconds_ago": 0,
+        "warmup": false,
+        "_hold_until": 1794481991.7024362,
+        "_last_real_ts": 0.0,
+        "_pir_streak": 0
+      },
+      "has_pir": true
+    }
+  ],
+  "rules": [
+    {
+      "id": "rule_1",
+      "title": "Auto Climate Control",
+      "description": "Living Room Temp > 26\u00b0C",
+      "triggerType": "temperature",
+      "thresholdValue": 26.0,
+      "actionDescription": "Action: Fans \u2192 Speed Level 4 & AC Cool",
+      "isEnabled": true
+    },
+    {
+      "id": "rule_2",
+      "title": "Air Quality Purifier",
+      "description": "Air Quality > 75 \u00b5g/m\u00b3",
+      "triggerType": "co2",
+      "thresholdValue": 75.0,
+      "actionDescription": "Action: Exhaust Fan \u2192 TURN ON Speed 4",
+      "isEnabled": true
+    },
+    {
+      "id": "rule_3",
+      "title": "Night Energy Saver",
+      "description": "Time > 23:00",
+      "triggerType": "schedule",
+      "thresholdValue": 23.0,
+      "actionDescription": "Action: Off sockets, AC to 25\u00b0C & lower lights",
+      "isEnabled": true
+    }
+  ],
+  "esp32_url": "http://192.168.1.10",
+  "mode": "direct",
+  "invert": false
+}

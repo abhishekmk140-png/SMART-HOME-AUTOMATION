@@ -1,0 +1,52 @@
+# Dependencies
+node_modules/
+frontend/node_modules/
+.pnp/
+.pnp.js
+
+# Production build artifacts
+dist/
+frontend/dist/
+build/
+*.tsbuildinfo
+
+# Python artifacts
+__pycache__/
+backend/__pycache__/
+*.py[cod]
+*$py.class
+*.so
+.Python
+env/
+venv/
+.venv/
+ENV/
+
+# Environment files & secrets (DO NOT COMMIT REAL API KEYS)
+.env
+*.env
+backend/.env
+!.env.example
+!backend/.env.example
+
+# Arduino / ESP32 build artifacts
+*.bin
+*.elf
+*.hex
+
+# Logs, scratch and runtime files
+*.log
+npm-debug.log*
+yarn-debug.log*
+yarn-error.log*
+pnpm-debug.log*
+
+# System & Editor files
+.DS_Store
+Thumbs.db
+desktop.ini
+.vscode/
+.idea/
+*.swp
+*.swo
+

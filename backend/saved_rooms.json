@@ -1,0 +1,229 @@
+[
+  {
+    "id": "room_r1793692482928",
+    "name": "THE GALLERY",
+    "category": "Hall",
+    "esp32_url": "http://192.168.1.11",
+    "lights": [
+      {
+        "id": "r1793692482928_light_1",
+        "name": "LEDs (11x)",
+        "type": "light",
+        "isOn": false,
+        "value": 100,
+        "relayChannel": 1
+      },
+      {
+        "id": "r1793692482928_light_2",
+        "name": "LEDs (2x)",
+        "type": "light",
+        "isOn": false,
+        "value": 100,
+        "relayChannel": 2
+      },
+      {
+        "id": "r1793692482928_light_3",
+        "name": "LEDs (2x)",
+        "type": "light",
+        "isOn": false,
+        "value": 100,
+        "relayChannel": 3
+      },
+      {
+        "id": "r1793692482928_light_4",
+        "name": "LEDs (2x)",
+        "type": "light",
+        "isOn": false,
+        "value": 100,
+        "relayChannel": 4
+      }
+    ],
+    "fans": [
+      {
+        "id": "r1793692482928_fan_1",
+        "name": "FAN 1",
+        "type": "fan",
+        "isOn": false,
+        "value": 2,
+        "relayChannel": 5
+      },
+      {
+        "id": "r1793692482928_fan_2",
+        "name": "FAN 2",
+        "type": "fan",
+        "isOn": false,
+        "value": 2,
+        "relayChannel": 6
+      }
+    ],
+    "switches": [],
+    "tempSensor": {
+      "id": "r1793692482928_sensor_temp",
+      "name": "Temperature",
+      "value": 24.5,
+      "unit": "°C"
+    },
+    "humSensor": {
+      "id": "r1793692482928_sensor_hum",
+      "name": "Humidity",
+      "value": 48,
+      "unit": "%"
+    },
+    "co2Sensor": {
+      "id": "r1793692482928_sensor_co2",
+      "name": "Air Quality",
+      "value": 24,
+      "unit": "µg/m³"
+    },
+    "acs": []
+  },
+  {
+    "id": "room_r1793692559305",
+    "name": "ENGINEERING HUB",
+    "category": "Development Area",
+    "esp32_url": "http://192.168.1.10",
+    "lights": [
+      {
+        "id": "r1793692559305_light_1",
+        "name": "AC Bay LEDs (2x)",
+        "type": "light",
+        "isOn": false,
+        "value": 100,
+        "relayChannel": 1
+      },
+      {
+        "id": "r1793692559305_light_2",
+        "name": "Fan Bay LEDs (2x)",
+        "type": "light",
+        "isOn": false,
+        "value": 100,
+        "relayChannel": 2
+      },
+      {
+        "id": "r1793692559305_light_3",
+        "name": "Fan Bay Rear LEDs (2x)",
+        "type": "light",
+        "isOn": false,
+        "value": 100,
+        "relayChannel": 3
+      }
+    ],
+    "fans": [
+      {
+        "id": "r1793692559305_fan_1",
+        "name": "FAN 1",
+        "type": "fan",
+        "isOn": false,
+        "value": 2,
+        "relayChannel": 4
+      },
+      {
+        "id": "r1793692559305_fan_2",
+        "name": "FAN 2",
+        "type": "fan",
+        "isOn": false,
+        "value": 2,
+        "relayChannel": 5
+      }
+    ],
+    "switches": [
+      {
+        "id": "room_r1793692559305_custom_1793705803457",
+        "name": "20A Power Switch",
+        "type": "switchDevice",
+        "isOn": false,
+        "value": 1,
+        "relayChannel": 6
+      }
+    ],
+    "tempSensor": {
+      "id": "r1793692559305_sensor_temp",
+      "name": "Temperature",
+      "value": 24.5,
+      "unit": "°C"
+    },
+    "humSensor": {
+      "id": "r1793692559305_sensor_hum",
+      "name": "Humidity",
+      "value": 48,
+      "unit": "%"
+    },
+    "co2Sensor": {
+      "id": "r1793692559305_sensor_co2",
+      "name": "Air Quality",
+      "value": 24,
+      "unit": "µg/m³"
+    },
+    "acs": []
+  },
+  {
+    "id": "room_r1793692575123",
+    "name": "CONFERENCE",
+    "category": "Conference",
+    "esp32_url": "http://192.168.1.14",
+    "lights": [
+      {
+        "id": "r1793692575123_light_1",
+        "name": "LED 1 (1x)",
+        "type": "light",
+        "isOn": false,
+        "value": 100,
+        "relayChannel": 1
+      },
+      {
+        "id": "r1793692575123_light_2",
+        "name": "LED 2 (1x)",
+        "type": "light",
+        "isOn": false,
+        "value": 100,
+        "relayChannel": 2
+      },
+      {
+        "id": "r1793692575123_light_3",
+        "name": "LED 3 (1x)",
+        "type": "light",
+        "isOn": false,
+        "value": 100,
+        "relayChannel": 3
+      },
+      {
+        "id": "r1793692575123_light_4",
+        "name": "LED 4 (1x)",
+        "type": "light",
+        "isOn": false,
+        "value": 100,
+        "relayChannel": 4
+      }
+    ],
+    "fans": [
+      {
+        "id": "r1793692575123_fan_1",
+        "name": "FAN 1",
+        "type": "fan",
+        "isOn": false,
+        "value": 2,
+        "relayChannel": 5
+      }
+    ],
+    "switches": [],
+    "tempSensor": {
+      "id": "r1793692575123_sensor_temp",
+      "name": "Temperature",
+      "value": 24.5,
+      "unit": "°C"
+    },
+    "humSensor": {
+      "id": "r1793692575123_sensor_hum",
+      "name": "Humidity",
+      "value": 48,
+      "unit": "%"
+    },
+    "co2Sensor": {
+      "id": "r1793692575123_sensor_co2",
+      "name": "Air Quality",
+      "value": 24,
+      "unit": "µg/m³"
+    },
+    "acs": []
+  }
+]
