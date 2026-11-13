@@ -546,7 +546,7 @@ export default function App() {
 
   useEffect(() => { 
     load()
-    const t = setInterval(load, 2000) 
+    const t = setInterval(load, 5000) 
     return () => clearInterval(t) 
   }, [load])
 
@@ -963,19 +963,17 @@ function Dashboard({ rooms, M, onToggleRoom, onScene, reloadRooms, isFull, onTog
   </>
 }
 
-/* ESP32 relay status strip (shows the 3 socket boards and their 6 channels) */
-function Rel({ toast, reloadRooms }: any) {
+/* ESP32 relay status strip (shows the 3 socket boards) */
+function Rel({ toast }: any) {
   const [r, setR] = useState<any>(null)
   const [selectedBoardIdx, setSelectedBoardIdx] = useState(0)
   const [editing, setEditing] = useState(false)
   const [url, setUrl] = useState('')
   const [busy, setBusy] = useState(false)
-  const lastChannelActionTs = useRef(0)
 
   const refresh = () => {
-    if (Date.now() - lastChannelActionTs.current < 3000) return
+    if (typeof document !== 'undefined' && document.hidden) return
     api.relays().then(data => {
-      if (Date.now() - lastChannelActionTs.current < 3000) return
       setR(data)
       if (!editing) {
         if (data.boards && data.boards[selectedBoardIdx]) {
@@ -989,7 +987,7 @@ function Rel({ toast, reloadRooms }: any) {
 
   useEffect(() => {
     refresh()
-    const timer = setInterval(refresh, 2000)
+    const timer = setInterval(refresh, 8000)
     return () => clearInterval(timer)
   }, [selectedBoardIdx])
 
@@ -1014,57 +1012,9 @@ function Rel({ toast, reloadRooms }: any) {
     }
   }
 
-  const changeMode = async (mode: string) => {
-    try {
-      const updated = await api.setRelayMode(mode)
-      setR((prev: any) => ({ ...prev, ...updated }))
-      if (toast) toast(mode === 'room_nodes' ? 'Mode: 1 Relay per Room Node' : 'Mode: Direct 1-to-1 Device Relays')
-    } catch {
-      if (toast) toast('Failed to update relay mode')
-    }
-  }
-
-  const toggleChannel = async (ch: number) => {
-    lastChannelActionTs.current = Date.now()
-    joySound.pop()
-    if (activeBoard) {
-      setR((prev: any) => {
-        if (!prev || !prev.boards) return prev
-        const newBoards = [...prev.boards]
-        const b = { ...newBoards[selectedBoardIdx] }
-        const m = (b.active_mask || '000000').split('')
-        m[ch - 1] = m[ch - 1] === '1' ? '0' : '1'
-        b.active_mask = m.join('')
-        newBoards[selectedBoardIdx] = b
-        return { ...prev, boards: newBoards }
-      })
-      api.toggleRoomChannel(activeBoard.id, ch).then(() => {
-        if (reloadRooms) reloadRooms()
-      }).catch(() => {})
-      if (toast) toast(`${activeBoard.name} · CH${ch} toggled`)
-    } else {
-      api.toggleChannel(ch).then((updated: any) => {
-        setR((prev: any) => ({ ...prev, ...updated }))
-        if (reloadRooms) reloadRooms()
-      }).catch(() => {})
-    }
-  }
-
-  const toggleInvert = async () => {
-    try {
-      const updated = await api.invertRelays()
-      setR((prev: any) => ({ ...prev, ...updated }))
-      if (toast) toast(updated.invert ? 'Relay Logic: Active LOW (Inverted)' : 'Relay Logic: Active HIGH (Normal)')
-    } catch {
-      if (toast) toast('Failed to invert relay logic')
-    }
-  }
-
   if (!r) return null
-  const mask = activeBoard ? (activeBoard.active_mask || '000000') : (r.active_mask || '000000')
   const isOnline = activeBoard ? activeBoard.online : r.online
   const currentUrl = activeBoard ? activeBoard.esp32_url : r.esp32_url
-  const currentMap = activeBoard ? activeBoard.map : r.map
 
   return (
     <div className="card col g10" style={{ padding: 14 }}>
@@ -1134,74 +1084,6 @@ function Rel({ toast, reloadRooms }: any) {
           {activeBoard?.error ? <span style={{ color: '#EF4444' }}>{activeBoard.error}</span> : r.error && <span style={{ color: '#EF4444' }}>{r.error}</span>}
         </div>
       )}
-
-      <div className="col g8" style={{ marginTop: 4 }}>
-        <div className="row sb" style={{ flexWrap: 'wrap', gap: 6 }}>
-          <div className="mut" style={{ fontSize: 11, fontWeight: 600 }}>
-            {activeBoard ? `${activeBoard.name.toUpperCase()} CHANNELS (TAP TO TEST)` : 'RELAY CHANNELS (TAP TO TOGGLE)'}
-          </div>
-          <div className="row g6">
-            <button
-              className={`pill ${r.invert ? 'on' : ''}`}
-              style={{ padding: '2px 8px', fontSize: 10 }}
-              title="Click if physical relay states are inverted"
-              onClick={toggleInvert}>
-              {r.invert ? '⚡ Active LOW' : '⚡ Active HIGH'}
-            </button>
-          </div>
-        </div>
-
-        <div className="channels-grid">
-          {[0, 1, 2, 3, 4, 5].map(i => {
-            const isOn = mask[i] === '1'
-            const chName = `CH${i + 1}`
-            const desc = currentMap ? currentMap[chName] || chName : chName
-            return (
-              <div
-                key={i}
-                onClick={() => {
-                  joySound.toggleDev(!isOn)
-                  toggleChannel(i + 1)
-                }}
-                style={{
-                  background: isOn ? 'rgba(16, 185, 129, 0.16)' : 'rgba(24, 32, 50, 0.72)',
-                  border: isOn ? '1.5px solid #10B981' : '1px solid rgba(255,255,255,0.1)',
-                  borderRadius: 12,
-                  padding: '9px 10px',
-                  display: 'flex',
-                  flexDirection: 'column',
-                  gap: 4,
-                  cursor: 'pointer',
-                  userSelect: 'none',
-                  transition: 'all 0.15s ease'
-                }}>
-                <div className="row sb">
-                  <div className="row g6">
-                    <b style={{ fontSize: 12, color: isOn ? '#10B981' : 'var(--onv)' }}>{chName}</b>
-                    {isOn && desc.toLowerCase().includes('fan') && (
-                      <Fan on={true} speed={3} c="#10B981" s={14} />
-                    )}
-                  </div>
-                  <span
-                    className={`badge ${isOn && !desc.toLowerCase().includes('fan') ? 'badge-blink-on' : ''}`}
-                    style={{
-                      fontSize: 9,
-                      fontWeight: 700,
-                      padding: '1px 6px',
-                      background: isOn ? (desc.toLowerCase().includes('fan') ? '#06B6D4' : '#F59E0B') : 'var(--c3)',
-                      color: isOn ? '#fff' : 'var(--out)'
-                    }}>
-                    {isOn ? (desc.toLowerCase().includes('fan') ? '⟳ ON' : '● ON') : 'OFF'}
-                  </span>
-                </div>
-                <div style={{ fontSize: 10, color: 'var(--on)', whiteSpace: 'nowrap', overflow: 'hidden', textOverflow: 'ellipsis' }}>
-                  {desc}
-                </div>
-              </div>
-            )
-          })}
-        </div>
-      </div>
     </div>
   )
 }

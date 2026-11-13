@@ -143,7 +143,6 @@ export default function Lively3DSmartHomeBg() {
             height: '100%',
             objectFit: 'cover',
             display: 'block',
-            filter: 'brightness(0.96) contrast(1.05)',
             userSelect: 'none',
           }}
         />

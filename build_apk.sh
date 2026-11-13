@@ -22,3 +22,4 @@ echo "============================================="
 echo "✅ Official Android APK Ready!"
 echo "Location: android/app/build/outputs/apk/debug/app-debug.apk"
 echo "============================================="
+

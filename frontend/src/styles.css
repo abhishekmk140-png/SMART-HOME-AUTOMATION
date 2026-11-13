@@ -59,9 +59,7 @@ html, body {
   height: 100vh;
   height: 100dvh;
   margin: 0 auto;
-  background: rgba(11, 15, 25, 0.88);
-  backdrop-filter: blur(10px);
-  -webkit-backdrop-filter: blur(10px);
+  background: rgba(11, 15, 25, 0.92);
   position: relative;
   display: flex;
   flex-direction: column;
@@ -297,16 +295,14 @@ html, body {
 }
 .mi.o { font-family: 'Material Icons Outlined'; }
 
-/* Frosted Bento Glass Cards (144Hz Hardware Promoted) */
+/* High-Speed Hardware Composited Bento Cards (60-90-144 FPS Locked) */
 .card {
-  background: rgba(18, 25, 42, 0.88);
-  backdrop-filter: blur(8px);
-  -webkit-backdrop-filter: blur(8px);
+  background: rgba(18, 25, 42, 0.94);
   border: 1px solid rgba(255, 255, 255, 0.09);
   border-radius: 20px;
   box-shadow: 0 10px 30px rgba(0, 0, 0, 0.38), inset 0 1px 0 rgba(255, 255, 255, 0.06);
   color: var(--on);
-  transition: transform 0.22s cubic-bezier(0.22, 1, 0.36, 1), box-shadow 0.22s ease, border-color 0.22s ease, background 0.22s ease;
+  transition: transform 0.2s cubic-bezier(0.22, 1, 0.36, 1), box-shadow 0.2s ease, border-color 0.2s ease;
   transform: translateZ(0);
   backface-visibility: hidden;
 }
@@ -393,7 +389,7 @@ html, body {
   font-size: 13px;
   font-weight: 600;
   font-family: inherit;
-  background: rgba(30, 41, 59, 0.72);
+  background: rgba(30, 41, 59, 0.82);
   color: #E2E8F0;
   border: 1px solid rgba(255, 255, 255, 0.1);
   cursor: pointer;
@@ -402,8 +398,7 @@ html, body {
   display: inline-flex;
   align-items: center;
   gap: 6px;
-  backdrop-filter: blur(12px);
-  -webkit-backdrop-filter: blur(12px);
+  transform: translateZ(0);
   transition: transform 0.2s cubic-bezier(0.22, 1, 0.36, 1), box-shadow 0.2s ease, background 0.2s ease, border-color 0.2s ease, color 0.2s ease;
 }
 
