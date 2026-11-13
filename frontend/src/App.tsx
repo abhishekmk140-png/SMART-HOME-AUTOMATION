@@ -299,9 +299,83 @@ function MobileAccessModal({ close, onLock }: any) {
   )
 }
 
+const DEFAULT_ROOMS: Room[] = [
+  {
+    id: "room_engineering_hub",
+    name: "Engineering Hub",
+    category: "Development",
+    esp32_url: "http://192.168.1.10",
+    has_am2315c: true,
+    tempSensor: { id: "hub_temp", name: "Temperature", value: 24.5, unit: "°C" },
+    humSensor: { id: "hub_hum", name: "Humidity", value: 52.0, unit: "%" },
+    co2Sensor: { id: "hub_aq", name: "Air Quality", value: 22.0, unit: "µg/m³" },
+    lights: [
+      { id: "hub_light_1", name: "Workstation Lights", type: "light", isOn: true, value: 90, relayChannel: 1 },
+      { id: "hub_light_2", name: "Lab Overhead Spot", type: "light", isOn: false, value: 70, relayChannel: 2 },
+    ],
+    fans: [
+      { id: "hub_fan_1", name: "Exhaust Vent Fan", type: "fan", isOn: true, value: 3, relayChannel: 3 },
+    ],
+    acs: [
+      { id: "hub_ac_1", name: "Precision Inverter AC", type: "ac", isOn: true, value: 24, relayChannel: 4 },
+    ],
+    switches: [
+      { id: "hub_pwr_1", name: "20A Main Socket", type: "switchDevice", isOn: true, value: 1, relayChannel: 5 },
+      { id: "hub_aux_1", name: "Auxiliary Workbench", type: "switchDevice", isOn: false, value: 0, relayChannel: 6 },
+    ],
+  },
+  {
+    id: "room_the_gallery",
+    name: "The Gallery",
+    category: "Hall",
+    esp32_url: "http://192.168.1.11",
+    has_aqi: true,
+    tempSensor: { id: "gal_temp", name: "Temperature", value: 23.0, unit: "°C" },
+    humSensor: { id: "gal_hum", name: "Humidity", value: 48.0, unit: "%" },
+    co2Sensor: { id: "gal_co2", name: "Air Quality", value: 18.0, unit: "µg/m³" },
+    lights: [
+      { id: "gal_light_1", name: "Chandelier Ambient", type: "light", isOn: true, value: 85, relayChannel: 1 },
+      { id: "gal_light_2", name: "Wall Accent Wash", type: "light", isOn: true, value: 60, relayChannel: 2 },
+    ],
+    fans: [
+      { id: "gal_fan_1", name: "Ceiling Circulation Fan", type: "fan", isOn: false, value: 2, relayChannel: 3 },
+    ],
+    acs: [
+      { id: "gal_ac_1", name: "Central Climate AC", type: "ac", isOn: false, value: 24, relayChannel: 4 },
+    ],
+    switches: [
+      { id: "gal_sw_1", name: "Display Sockets", type: "switchDevice", isOn: true, value: 1, relayChannel: 5 },
+    ],
+  },
+  {
+    id: "room_conference",
+    name: "Conference",
+    category: "Conference",
+    esp32_url: "http://192.168.1.14",
+    has_pir: true,
+    occupancy: { occupied: true, status: "Occupied", pir: true, pir1: true, seconds_ago: 5 },
+    tempSensor: { id: "conf_temp", name: "Temperature", value: 22.8, unit: "°C" },
+    humSensor: { id: "conf_hum", name: "Humidity", value: 46.0, unit: "%" },
+    co2Sensor: { id: "conf_co2", name: "Air Quality", value: 28.0, unit: "µg/m³" },
+    lights: [
+      { id: "conf_light_1", name: "Boardroom Downlights", type: "light", isOn: true, value: 100, relayChannel: 1 },
+      { id: "conf_light_2", name: "Presentation Spot", type: "light", isOn: false, value: 50, relayChannel: 2 },
+    ],
+    fans: [
+      { id: "conf_fan_1", name: "Quiet Meeting Fan", type: "fan", isOn: true, value: 2, relayChannel: 3 },
+    ],
+    acs: [
+      { id: "conf_ac_1", name: "Conference AC Core", type: "ac", isOn: true, value: 23, relayChannel: 4 },
+    ],
+    switches: [
+      { id: "conf_proj_1", name: "Projector & Screen Lift", type: "switchDevice", isOn: true, value: 1, relayChannel: 5 },
+    ],
+  },
+]
+
 export default function App() {
   const [tab, setTab] = useState(0)
-  const [rooms, setRooms] = useState<Room[]>([])
+  const [rooms, setRooms] = useState<Room[]>(DEFAULT_ROOMS)
   const [rules, setRules] = useState<Rule[]>([])
   const [ok, setOk] = useState(true)
   const [roomId, setRoomId] = useState<string | null>(null)
@@ -309,9 +383,7 @@ export default function App() {
   const toast = (m: string) => { setSnack(m); setTimeout(() => setSnack(''), 1800) }
 
   const isMobileUrl = typeof window !== 'undefined' && (
-    new URLSearchParams(window.location.search).get('mobile') === '1' ||
     new URLSearchParams(window.location.search).get('biometric') === '1' ||
-    /Android|webOS|iPhone|iPad|iPod|BlackBerry|IEMobile|Opera Mini/i.test(navigator.userAgent) ||
     localStorage.getItem('biometric_locked') === '1'
   )
   const [isLocked, setIsLocked] = useState(Boolean(isMobileUrl))

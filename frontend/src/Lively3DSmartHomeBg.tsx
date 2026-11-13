@@ -24,41 +24,60 @@ export default function Lively3DSmartHomeBg() {
   const [scene, setScene] = useState<'villa' | 'core'>('villa')
   const [activeBeacon, setActiveBeacon] = useState<string | null>(null)
 
-  // 3D Parallax interpolation with direct GPU transforms (0 React re-renders)
+  // 3D Parallax interpolation with direct GPU transforms & automatic idle sleep
   useEffect(() => {
     let currentX = 0
     let currentY = 0
     let targetX = 0
     let targetY = 0
     let animId: number
+    let isRunning = false
+
+    const loop = () => {
+      const dx = targetX - currentX
+      const dy = targetY - currentY
+      currentX += dx * 0.1
+      currentY += dy * 0.1
+
+      if (stageRef.current) {
+        stageRef.current.style.transform = `perspective(1200px) rotateX(${-currentY * 0.5}deg) rotateY(${currentX * 0.5}deg) translate3d(${currentX * 3}px, ${currentY * 2}px, 0) scale(1.03)`
+      }
+
+      // Automatically sleep the animation loop when motion settles to save 100% GPU/CPU!
+      if (Math.abs(dx) > 0.02 || Math.abs(dy) > 0.02) {
+        animId = requestAnimationFrame(loop)
+      } else {
+        isRunning = false
+      }
+    }
+
+    const startLoop = () => {
+      if (!isRunning) {
+        isRunning = true
+        animId = requestAnimationFrame(loop)
+      }
+    }
 
     const handleMouseMove = (e: MouseEvent) => {
       const { innerWidth: w, innerHeight: h } = window
-      targetX = ((e.clientX - w / 2) / (w / 2)) * 14
-      targetY = ((e.clientY - h / 2) / (h / 2)) * 10
+      targetX = ((e.clientX - w / 2) / (w / 2)) * 10
+      targetY = ((e.clientY - h / 2) / (h / 2)) * 8
+      startLoop()
     }
 
     const handleDeviceOrientation = (e: DeviceOrientationEvent) => {
       if (e.gamma !== null && e.beta !== null) {
-        targetX = Math.max(-14, Math.min(14, (e.gamma / 30) * 14))
-        targetY = Math.max(-10, Math.min(10, ((e.beta - 45) / 30) * 10))
+        targetX = Math.max(-10, Math.min(10, (e.gamma / 30) * 10))
+        targetY = Math.max(-8, Math.min(8, ((e.beta - 45) / 30) * 8))
+        startLoop()
       }
-    }
-
-    const loop = () => {
-      currentX += (targetX - currentX) * 0.08
-      currentY += (targetY - currentY) * 0.08
-      if (stageRef.current) {
-        stageRef.current.style.transform = `perspective(1200px) rotateX(${-currentY * 0.6}deg) rotateY(${currentX * 0.6}deg) translate3d(${currentX * 4}px, ${currentY * 3}px, 0) scale(1.04)`
-      }
-      animId = requestAnimationFrame(loop)
     }
 
     window.addEventListener('mousemove', handleMouseMove, { passive: true })
     if (window.DeviceOrientationEvent) {
       window.addEventListener('deviceorientation', handleDeviceOrientation, { passive: true })
     }
-    animId = requestAnimationFrame(loop)
+    startLoop()
 
     return () => {
       cancelAnimationFrame(animId)
