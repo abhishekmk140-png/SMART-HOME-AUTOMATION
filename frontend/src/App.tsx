@@ -2090,9 +2090,15 @@ function Settings({ ok, reload, toast, isFull, onToggleFull, is3D, onToggle3D, o
       <div className="mut">Server Endpoint</div><div className="mut">API Gateway URL</div>
       <input type="text" style={{ fontFamily: 'monospace' }} value={url} onChange={e => setUrl(e.target.value)} />
       <div className="mut">Quick Network Select</div>
-      <div className="chips">{[['This Server', '/api'], ['Wi-Fi (Router)', 'http://192.168.1.28:8000'], ['Localhost', 'http://127.0.0.1:8000'], ['Laptop Hotspot', 'http://192.168.137.1:8000']].map(([l, u]) => <button key={l} className={`pill ${url === u ? 'on' : ''}`} onClick={() => setUrl(u)}>{l}</button>)}</div>
+      <div className="chips">{[['This Server', '/api'], ['Wi-Fi (192.168.1.12)', 'http://192.168.1.12:8000'], ['Localhost', 'http://127.0.0.1:8000'], ['Laptop Hotspot', 'http://192.168.137.1:8000']].map(([l, u]) => <button key={l} className={`pill ${url === u ? 'on' : ''}`} onClick={() => setUrl(u)}>{l}</button>)}</div>
       {url.includes('192.168.137.1') && <div className="mut" style={{ color: '#F59E0B', fontSize: 11 }}>Note: Requires Windows Mobile Hotspot to be turned ON in Windows Settings (Win + I &gt; Mobile hotspot).</div>}
-      {url.includes('192.168.1.28') && <div className="mut" style={{ color: '#10B981', fontSize: 11 }}>Active Wi-Fi connection on router Airtel_AIOTA.tech.</div>}
+      {url.includes('192.168.1.12') && <div className="mut" style={{ color: '#10B981', fontSize: 11 }}>Active Wi-Fi connection on router Airtel_AIOTA.tech.</div>}
+      {typeof window !== 'undefined' && window.location.hostname.includes('vercel.app') && (
+        <div style={{ background: 'rgba(56,189,248,0.08)', border: '1px solid rgba(56,189,248,0.25)', padding: '10px 14px', borderRadius: 10, fontSize: 12, lineHeight: 1.5, color: '#E2E8F0', marginTop: 4 }}>
+          <b style={{ color: '#38BDF8' }}>🌐 Connect Vercel App to Local ESP32 Hardware:</b>
+          <div style={{ marginTop: 4 }}>Run <code>start_remote_cloud_link.bat</code> on your laptop, paste the generated <code>https://*.trycloudflare.com</code> URL into the input above, and click <b>Test Connection &amp; Sync</b>. Your ESP32 will immediately turn ONLINE on Vercel!</div>
+        </div>
+      )}
       <button className="btn" onClick={test} disabled={busy}>{busy ? 'Syncing with Server...' : 'Test Connection & Sync'}</button></div>
     <div className="card col g10" style={{ padding: '14px 18px' }}>
       <h3 style={{ padding: '4px 0' }}>Preferences & System Controls</h3>

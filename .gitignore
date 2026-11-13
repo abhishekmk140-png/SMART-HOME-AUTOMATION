@@ -33,6 +33,8 @@ backend/.env
 *.bin
 *.elf
 *.hex
+*.exe
+cloudflared.exe
 
 # Logs, scratch and runtime files
 *.log
