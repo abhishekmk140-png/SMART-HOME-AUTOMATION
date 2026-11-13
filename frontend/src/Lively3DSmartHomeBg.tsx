@@ -20,11 +20,11 @@ const BEACONS: Beacon[] = [
 
 export default function Lively3DSmartHomeBg() {
   const containerRef = useRef<HTMLDivElement>(null)
+  const stageRef = useRef<HTMLDivElement>(null)
   const [scene, setScene] = useState<'villa' | 'core'>('villa')
-  const [mousePos, setMousePos] = useState({ x: 0, y: 0 })
   const [activeBeacon, setActiveBeacon] = useState<string | null>(null)
 
-  // 3D Parallax interpolation
+  // 3D Parallax interpolation with direct GPU transforms (0 React re-renders)
   useEffect(() => {
     let currentX = 0
     let currentY = 0
@@ -34,7 +34,6 @@ export default function Lively3DSmartHomeBg() {
 
     const handleMouseMove = (e: MouseEvent) => {
       const { innerWidth: w, innerHeight: h } = window
-      // Normalize from -1 to 1
       targetX = ((e.clientX - w / 2) / (w / 2)) * 14
       targetY = ((e.clientY - h / 2) / (h / 2)) * 10
     }
@@ -47,9 +46,11 @@ export default function Lively3DSmartHomeBg() {
     }
 
     const loop = () => {
-      currentX += (targetX - currentX) * 0.06
-      currentY += (targetY - currentY) * 0.06
-      setMousePos({ x: currentX, y: currentY })
+      currentX += (targetX - currentX) * 0.08
+      currentY += (targetY - currentY) * 0.08
+      if (stageRef.current) {
+        stageRef.current.style.transform = `perspective(1200px) rotateX(${-currentY * 0.6}deg) rotateY(${currentX * 0.6}deg) translate3d(${currentX * 4}px, ${currentY * 3}px, 0) scale(1.04)`
+      }
       animId = requestAnimationFrame(loop)
     }
 
@@ -84,17 +85,18 @@ export default function Lively3DSmartHomeBg() {
         pointerEvents: 'none',
       }}
     >
-      {/* Dynamic 3D Layer with Parallax Tilt */}
+      {/* Dynamic 3D Layer with Parallax Tilt (Hardware Accelerated, 0ms lag) */}
       <div
+        ref={stageRef}
         className="lively-3d-stage"
         style={{
           position: 'absolute',
           inset: '-5%',
           width: '110%',
           height: '110%',
-          transform: `perspective(1200px) rotateX(${-mousePos.y * 0.6}deg) rotateY(${mousePos.x * 0.6}deg) translate3d(${mousePos.x * 4}px, ${mousePos.y * 3}px, 0) scale(1.04)`,
+          transform: 'perspective(1200px) rotateX(0deg) rotateY(0deg) translate3d(0, 0, 0) scale(1.04)',
           transformStyle: 'preserve-3d',
-          transition: 'transform 0.1s ease-out',
+          willChange: 'transform',
         }}
       >
         {/* 3D Smart Home Render */}

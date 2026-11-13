@@ -492,7 +492,7 @@ def _background_health_poller():
     with ThreadPoolExecutor(max_workers=6) as pool:
         while True:
             try:
-                time.sleep(1.0)
+                time.sleep(2.5)
                 unique_hosts = {}
                 for r in list(ROOMS):
                     u = r.get("esp32_url", "")

@@ -47,7 +47,16 @@ export function setBaseUrl(u: string) {
 }
 
 const j = { 'Content-Type': 'application/json' }
-const req = (m: string, p: string, b?: any) => fetch(base + p, { method: m, headers: b ? j : undefined, body: b ? JSON.stringify(b) : undefined })
+const req = (m: string, p: string, b?: any, timeoutMs = 4500) => {
+  const controller = new AbortController()
+  const tid = setTimeout(() => controller.abort(), timeoutMs)
+  return fetch(base + p, {
+    method: m,
+    headers: b ? j : undefined,
+    body: b ? JSON.stringify(b) : undefined,
+    signal: controller.signal,
+  }).finally(() => clearTimeout(tid))
+}
 
 export const api = {
   health: async () => { try { return (await fetch(base + '/health', { signal: AbortSignal.timeout(3000) })).ok } catch { return false } },
@@ -76,12 +85,12 @@ export const api = {
   invertRelays: async () => (await req('POST', '/relays/invert')).json(),
   visionStatus: async () => (await req('GET', '/vision/status')).json(),
   visionText: async (text: string, active_room_id?: string | null, ui_state?: Record<string, any>, history?: Array<{ user: string; vision: string }>): Promise<{ ignore?: boolean; end_conversation?: boolean; heard: string; reply: string; executed: string[]; ui_actions: any[]; rooms: Room[] }> => {
-    const res = await req('POST', '/vision/text', { text, active_room_id, ui_state, history })
+    const res = await req('POST', '/vision/text', { text, active_room_id, ui_state, history }, 18000)
     if (!res.ok) throw new Error(await res.text())
     return res.json()
   },
   visionAudio: async (audio_base64: string, mime_type: string, active_room_id?: string | null, ui_state?: Record<string, any>, wake_word_required = false, history?: Array<{ user: string; vision: string }>): Promise<{ ignore?: boolean; end_conversation?: boolean; heard: string; reply: string; executed: string[]; ui_actions: any[]; rooms: Room[] }> => {
-    const res = await req('POST', '/vision/audio', { audio_base64, mime_type, active_room_id, ui_state, wake_word_required, history })
+    const res = await req('POST', '/vision/audio', { audio_base64, mime_type, active_room_id, ui_state, wake_word_required, history }, 22000)
     if (!res.ok) throw new Error(await res.text())
     return res.json()
   },

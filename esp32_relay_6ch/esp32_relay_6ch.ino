@@ -122,9 +122,44 @@ void init_am2315c() {
   }
 }
 
+static bool am2315c_measuring = false;
+static unsigned long am2315c_start_ms = 0;
+
 void poll_am2315c() {
-  if (millis() - last_sensor_time < (sensor_ready ? 2500 : 6000)) return;
-  last_sensor_time = millis();
+  unsigned long now = millis();
+
+  if (am2315c_measuring) {
+    if (now - am2315c_start_ms < 85) return; // Non-blocking wait for conversion (0ms lag)
+    am2315c_measuring = false;
+
+    Wire.requestFrom((uint8_t)AM2315C_ADDR, (uint8_t)7);
+    if (Wire.available() >= 6) {
+      uint8_t buf[7];
+      for (int i = 0; i < 7 && Wire.available(); i++) {
+        buf[i] = Wire.read();
+      }
+      if ((buf[0] & 0x80) == 0) {
+        uint32_t raw_h = ((uint32_t)buf[1] << 12) | ((uint32_t)buf[2] << 4) | (buf[3] >> 4);
+        uint32_t raw_t = (((uint32_t)buf[3] & 0x0F) << 16) | ((uint32_t)buf[4] << 8) | buf[5];
+
+        float h = (float)raw_h * 100.0 / 1048576.0;
+        float t = ((float)raw_t * 200.0 / 1048576.0) - 50.0;
+
+        if (t < 0.0) t = 0.0;
+        if (h < 0.0) h = 0.0;
+        if (h > 100.0) h = 100.0;
+
+        current_temp = t;
+        current_hum = h;
+        sensor_ready = true;
+        Serial.printf("[AM2315C][%s] Temp: %.1f C | Humidity: %.1f %%\n", ROOM_NAME, current_temp, current_hum);
+      }
+    }
+    return;
+  }
+
+  if (now - last_sensor_time < (sensor_ready ? 2500 : 6000)) return;
+  last_sensor_time = now;
 
   if (!sensor_ready) {
     Wire.beginTransmission(AM2315C_ADDR);
@@ -143,37 +178,14 @@ void poll_am2315c() {
   if (err != 0) {
     sensor_ready = false;
     Wire.end();
-    delay(10);
+    delay(5);
     Wire.begin(AM2315C_SDA, AM2315C_SCL, 100000);
     Wire.setTimeOut(20);
     return;
   }
 
-  delay(85);
-
-  Wire.requestFrom((uint8_t)AM2315C_ADDR, (uint8_t)7);
-  if (Wire.available() >= 6) {
-    uint8_t buf[7];
-    for (int i = 0; i < 7 && Wire.available(); i++) {
-      buf[i] = Wire.read();
-    }
-    if ((buf[0] & 0x80) == 0) {
-      uint32_t raw_h = ((uint32_t)buf[1] << 12) | ((uint32_t)buf[2] << 4) | (buf[3] >> 4);
-      uint32_t raw_t = (((uint32_t)buf[3] & 0x0F) << 16) | ((uint32_t)buf[4] << 8) | buf[5];
-
-      float h = (float)raw_h * 100.0 / 1048576.0;
-      float t = ((float)raw_t * 200.0 / 1048576.0) - 50.0;
-
-      if (t < 0.0) t = 0.0;
-      if (h < 0.0) h = 0.0;
-      if (h > 100.0) h = 100.0;
-
-      current_temp = t;
-      current_hum = h;
-      sensor_ready = true;
-      Serial.printf("[AM2315C][%s] Temp: %.1f C | Humidity: %.1f %%\n", ROOM_NAME, current_temp, current_hum);
-    }
-  }
+  am2315c_measuring = true;
+  am2315c_start_ms = now;
 }
 #endif
 

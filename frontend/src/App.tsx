@@ -1,4 +1,4 @@
-import { useCallback, useEffect, useState, ReactNode } from 'react'
+import { useCallback, useEffect, useRef, useState, ReactNode } from 'react'
 import { api, baseUrl, setBaseUrl, Room, Rule, Dev, Sensor } from './api'
 import Lively3DSmartHomeBg from './Lively3DSmartHomeBg'
 import { joySound, burstJoy } from './joy'
@@ -355,20 +355,36 @@ export default function App() {
     }
   }
 
+  const inFlightRef = useRef(false)
+  const prevRoomsHash = useRef('')
+  const prevRulesHash = useRef('')
+
   const load = useCallback(async () => {
+    if (inFlightRef.current || (typeof document !== 'undefined' && document.hidden)) return
+    inFlightRef.current = true
     try {
       const [rms, rls] = await Promise.all([api.rooms(), api.rules()])
-      setRooms(rms)
-      setRules(rls)
+      const rmsHash = JSON.stringify(rms)
+      if (rmsHash !== prevRoomsHash.current) {
+        prevRoomsHash.current = rmsHash
+        setRooms(rms)
+      }
+      const rlsHash = JSON.stringify(rls)
+      if (rlsHash !== prevRulesHash.current) {
+        prevRulesHash.current = rlsHash
+        setRules(rls)
+      }
       setOk(true)
     } catch {
       setOk(false)
+    } finally {
+      inFlightRef.current = false
     }
   }, [])
 
   useEffect(() => { 
     load()
-    const t = setInterval(load, 1500) 
+    const t = setInterval(load, 2000) 
     return () => clearInterval(t) 
   }, [load])
 
