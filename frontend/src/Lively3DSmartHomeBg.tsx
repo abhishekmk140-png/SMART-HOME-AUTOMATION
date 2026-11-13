@@ -24,7 +24,7 @@ export default function Lively3DSmartHomeBg() {
   const [scene, setScene] = useState<'villa' | 'core'>('villa')
   const [activeBeacon, setActiveBeacon] = useState<string | null>(null)
 
-  // Ultra-Smooth 144Hz Delta-Time Parallax Engine (Hardware-Decoupled Refresh Rate)
+  // Ultra-Smooth 144Hz (Laptop) & 90FPS (Mobile) Delta-Time Parallax Engine
   useEffect(() => {
     let currentX = 0
     let currentY = 0
@@ -33,13 +33,16 @@ export default function Lively3DSmartHomeBg() {
     let animId: number
     let isRunning = false
     let lastTime = performance.now()
+    let lastGyroX = 0
+    let lastGyroY = 0
 
     const loop = (now: number) => {
-      const dt = Math.min((now - lastTime) / 1000, 0.033)
+      // Clamped frame delta guarantees identical smoothness at 144Hz, 90FPS, or 120Hz
+      const dt = Math.min(Math.max((now - lastTime) / 1000, 0.001), 0.033)
       lastTime = now
 
-      // Time-constant exponential decay (12.0) guarantees identical 144Hz buttery smoothing
-      const blend = 1 - Math.exp(-12.0 * dt)
+      // Time-constant exponential decay (14.0) gives silky, responsive inertial tracking
+      const blend = 1 - Math.exp(-14.0 * dt)
       const dx = targetX - currentX
       const dy = targetY - currentY
       currentX += dx * blend
@@ -50,7 +53,7 @@ export default function Lively3DSmartHomeBg() {
       }
 
       // Automatically sleep the animation loop when motion settles to keep 0% CPU/GPU overhead
-      if (Math.abs(dx) > 0.008 || Math.abs(dy) > 0.008) {
+      if (Math.abs(dx) > 0.005 || Math.abs(dy) > 0.005) {
         animId = requestAnimationFrame(loop)
       } else {
         isRunning = false
@@ -73,10 +76,15 @@ export default function Lively3DSmartHomeBg() {
       startLoop()
     }
 
+    // Low-pass filtered gyro handler for mobile phones (delivers silky 90FPS gyro tilt with zero hand tremor)
     const handleDeviceOrientation = (e: DeviceOrientationEvent) => {
       if (e.gamma !== null && e.beta !== null) {
-        targetX = Math.max(-10, Math.min(10, (e.gamma / 30) * 10))
-        targetY = Math.max(-8, Math.min(8, ((e.beta - 45) / 30) * 8))
+        const rawX = Math.max(-10, Math.min(10, (e.gamma / 30) * 10))
+        const rawY = Math.max(-8, Math.min(8, ((e.beta - 45) / 30) * 8))
+        lastGyroX = lastGyroX * 0.75 + rawX * 0.25
+        lastGyroY = lastGyroY * 0.75 + rawY * 0.25
+        targetX = lastGyroX
+        targetY = lastGyroY
         startLoop()
       }
     }

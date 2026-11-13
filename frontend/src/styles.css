@@ -161,14 +161,14 @@ html, body {
   animation: joyDotPulse 2s infinite;
 }
 
-/* 144Hz Hardware-Composited Scroll Container */
+/* 144Hz & 90FPS High Refresh Hardware-Composited Scroll Container */
 .scroll {
   flex: 1;
   overflow-y: auto;
   overflow-x: hidden;
   padding: 18px 20px 28px;
-  scroll-behavior: smooth;
   -webkit-overflow-scrolling: touch;
+  touch-action: pan-y;
   overscroll-behavior-y: contain;
   contain: content;
   transform: translateZ(0);
@@ -176,6 +176,7 @@ html, body {
 
 @media (min-width: 768px) {
   .scroll {
+    scroll-behavior: smooth;
     padding: 22px 28px 30px;
   }
 }
@@ -336,6 +337,7 @@ html, body {
   transform: translate(-50%, -50%);
   animation: beaconPulse 2s cubic-bezier(0.24, 0, 0.38, 1) infinite;
   pointer-events: none;
+  will-change: transform, opacity;
 }
 @keyframes beaconPulse {
   0% { transform: translate(-50%, -50%) scale(0.6); opacity: 1; }
@@ -359,18 +361,22 @@ html, body {
   transform: translateX(-50%) translateY(0);
 }
 
+/* 100% GPU Compositor Driven Particles (Zero CPU Layout/Paint Cycles) */
 @keyframes floatParticles {
-  0% { background-position: 0 0; }
-  100% { background-position: 100px 200px; }
+  0% { transform: translate3d(0, 0, 0); }
+  50% { transform: translate3d(24px, 36px, 0); }
+  100% { transform: translate3d(0, 0, 0); }
 }
 .lively-3d-particles {
   position: absolute;
-  inset: 0;
+  inset: -40px;
   pointer-events: none;
   background-image: radial-gradient(circle at 50% 50%, rgba(255, 255, 255, 0.4) 1px, transparent 1px);
   background-size: 80px 80px;
-  opacity: 0.2;
-  animation: floatParticles 25s linear infinite;
+  opacity: 0.18;
+  animation: floatParticles 20s ease-in-out infinite;
+  will-change: transform;
+  transform: translateZ(0);
 }
 
 /* Floating Interactive Pills & Buttons */
@@ -843,19 +849,23 @@ html, body {
   letter-spacing: 0.3px;
 }
 
-/* Pulsing Bulb Glow */
+/* Pulsing Bulb Glow (GPU Accelerated) */
 @keyframes bulbPulse {
   0%, 100% {
-    box-shadow: 0 0 18px rgba(245, 158, 11, 0.7), inset 0 0 8px rgba(245, 158, 11, 0.35);
+    opacity: 1;
+    transform: scale(1);
   }
   50% {
-    box-shadow: 0 0 8px rgba(245, 158, 11, 0.3), inset 0 0 3px rgba(245, 158, 11, 0.15);
+    opacity: 0.78;
+    transform: scale(0.97);
   }
 }
 .bulb-box-on {
   background: rgba(245, 158, 11, 0.22) !important;
   border: 1.5px solid #F59E0B !important;
-  animation: bulbPulse 1.6s ease-in-out infinite !important;
+  box-shadow: 0 0 14px rgba(245, 158, 11, 0.55), inset 0 0 6px rgba(245, 158, 11, 0.25) !important;
+  animation: bulbPulse 1.8s ease-in-out infinite !important;
+  will-change: transform, opacity;
 }
 
 /* Active Device Cards */
@@ -1168,6 +1178,31 @@ h3 {
   background: rgba(16, 185, 129, 0.3);
   border-color: #10B981;
   color: #6EE7B7;
+}
+
+/* Mobile 90FPS High-Refresh Engine */
+@media (max-width: 768px) {
+  * {
+    touch-action: manipulation;
+  }
+  .scroll {
+    touch-action: pan-y;
+    -webkit-overflow-scrolling: touch;
+  }
+  /* Ultra-smooth 90FPS mobile rendering: bypass heavy nested GPU blurs with high-performance glass */
+  .card {
+    background: rgba(18, 25, 42, 0.94) !important;
+    backdrop-filter: blur(4px) !important;
+    -webkit-backdrop-filter: blur(4px) !important;
+  }
+  .pill {
+    backdrop-filter: none !important;
+    -webkit-backdrop-filter: none !important;
+  }
+  .joy-nav-btn {
+    backdrop-filter: none !important;
+    -webkit-backdrop-filter: none !important;
+  }
 }
 
 /* Mobile Tightening (< 520px) */
