@@ -18,8 +18,7 @@ const sSensor = (s: Sensor, t: 'temperature' | 'humidity' | 'co2') => {
   return { color: v < 35 ? '#10B981' : v < 115 ? '#F59E0B' : '#EF4444', text: v < 35 ? 'Good' : v < 115 ? 'Moderate' : 'High', icon: 'co2', pct: v / 250 }
 }
 
-function Header({ title, isFull, onToggleFull, onOpenMobile, onLock, livelyOn, onToggleLively, installPrompt, onInstallApp }: any) {
-  const [soundOn, setSoundOn] = useState(joySound.enabled)
+function Header({ title, installPrompt, onInstallApp }: any) {
   return (
     <div className="hdr">
       <div className="row g10">
@@ -42,49 +41,6 @@ function Header({ title, isFull, onToggleFull, onOpenMobile, onLock, livelyOn, o
             <I n="install_mobile" s={14} c="#fff" /> Install App
           </button>
         )}
-      </div>
-      <div className="row g6">
-        <button
-          className="circ"
-          style={{ width: 34, height: 34, background: soundOn ? 'rgba(16,185,129,0.18)' : 'var(--c3)' }}
-          title={soundOn ? 'Joyful Sounds: ON (Tap to mute)' : 'Joyful Sounds: MUTED (Tap to unmute)'}
-          onClick={() => {
-            const next = joySound.toggle()
-            setSoundOn(next)
-          }}>
-          <I n={soundOn ? 'volume_up' : 'volume_off'} s={18} c={soundOn ? '#10B981' : 'var(--onv)'} />
-        </button>
-        <button
-          className="circ"
-          style={{ width: 34, height: 34, background: livelyOn ? 'rgba(99,102,241,0.22)' : 'var(--c3)' }}
-          title={livelyOn ? 'Smart Home Mesh Background: ON (Tap to toggle)' : 'Smart Home Mesh Background: OFF (Tap to turn on)'}
-          onClick={() => {
-            joySound.pop()
-            if (onToggleLively) onToggleLively()
-          }}>
-          <I n="hub" s={18} c={livelyOn ? '#4F46E5' : 'var(--onv)'} />
-        </button>
-        <button
-          className="circ"
-          style={{ width: 34, height: 34, background: 'rgba(2,132,199,0.12)' }}
-          title="Mobile Phone Link & QR Code"
-          onClick={() => { joySound.pop(); onOpenMobile() }}>
-          <I n="phone_iphone" s={18} c="#0284C7" />
-        </button>
-        <button
-          className="circ"
-          style={{ width: 34, height: 34, background: 'rgba(99,102,241,0.12)' }}
-          title="Lock with Mobile Biometric Security"
-          onClick={() => { joySound.pop(); onLock() }}>
-          <I n="fingerprint" s={19} c="#6366F1" />
-        </button>
-        <button
-          className="circ"
-          style={{ width: 34, height: 34, background: 'var(--c3)' }}
-          title={isFull ? 'Exit Fullscreen' : 'Open Fullscreen Mode'}
-          onClick={() => { joySound.pop(); onToggleFull() }}>
-          <I n={isFull ? 'fullscreen_exit' : 'fullscreen'} s={20} c="var(--onv)" />
-        </button>
       </div>
     </div>
   )
@@ -2100,6 +2056,7 @@ function Automations({ rules, act, isFull, onToggleFull, is3D, onToggle3D, onOpe
 /* ---------------- Settings ---------------- */
 function Settings({ ok, reload, toast, isFull, onToggleFull, is3D, onToggle3D, onOpenMobile, onLock, livelyOn, onToggleLively, installPrompt, onInstallApp }: any) {
   const [url, setUrl] = useState(baseUrl()), [busy, setBusy] = useState(false), [bio, setBio] = useState(localStorage.getItem('biometric_enabled') === '1'), [sql, setSql] = useState(true)
+  const [soundOn, setSoundOn] = useState(joySound.enabled)
   const test = async () => { setBusy(true); setBaseUrl(url); await reload(); const h = await api.health(); setBusy(false); setUrl(baseUrl()); toast(h ? 'Connection Successful!' : 'Could not reach server') }
   const Row = ({ ic, t, s, on, set }: any) => <div className="row sb" style={{ padding: '10px 0' }}><div className="row g12"><I n={ic} c="var(--pri)" /><div><b style={{ fontSize: 14 }}>{t}</b>{s && <div className="mut">{s}</div>}</div></div>{set && <Sw on={on} set={set} />}</div>
   return <><Header title="Settings" isFull={isFull} onToggleFull={onToggleFull} is3D={is3D} onToggle3D={onToggle3D} onOpenMobile={onOpenMobile} onLock={onLock} livelyOn={livelyOn} onToggleLively={onToggleLively} installPrompt={installPrompt} onInstallApp={onInstallApp} />
@@ -2131,17 +2088,52 @@ function Settings({ ok, reload, toast, isFull, onToggleFull, is3D, onToggle3D, o
       {url.includes('192.168.1.28') && <div className="mut" style={{ color: '#10B981', fontSize: 11 }}>Active Wi-Fi connection on router Airtel_AIOTA.tech.</div>}
       <button className="btn" onClick={test} disabled={busy}>{busy ? 'Syncing with Server...' : 'Test Connection & Sync'}</button></div>
     <div className="card col g10" style={{ padding: '14px 18px' }}>
-      <h3 style={{ padding: '4px 0' }}>Preferences & Security</h3>
-      <Row ic="fingerprint" t="Biometric Security Lock" s="Require FaceID / Fingerprint on app launch" on={bio} set={() => {
-        const next = !bio
-        setBio(next)
-        localStorage.setItem('biometric_enabled', next ? '1' : '0')
-        if (next) localStorage.setItem('biometric_locked', '1')
-        toast(next ? 'Biometric Lock Enabled' : 'Biometric Lock Disabled')
-      }} />
+      <h3 style={{ padding: '4px 0' }}>Preferences & System Controls</h3>
+      <Row
+        ic={soundOn ? 'volume_up' : 'volume_off'}
+        t="Sound Effects & Audio Chimes"
+        s="Tactile audio pops and scene fanfare chimes"
+        on={soundOn}
+        set={() => {
+          const next = joySound.toggle()
+          setSoundOn(next)
+          toast(next ? 'Sound Effects Enabled 🔊' : 'Sound Effects Muted 🔇')
+        }}
+      />
+      <Row
+        ic="hub"
+        t="3D Lively Smart Home Mesh"
+        s="Hardware-accelerated 3D parallax environment"
+        on={livelyOn}
+        set={() => {
+          if (onToggleLively) onToggleLively()
+        }}
+      />
+      <Row
+        ic={isFull ? 'fullscreen_exit' : 'fullscreen'}
+        t="Fullscreen Display Mode"
+        s="Expand dashboard across the entire screen"
+        on={isFull}
+        set={() => {
+          if (onToggleFull) onToggleFull()
+        }}
+      />
+      <Row
+        ic="fingerprint"
+        t="Biometric Security Lock"
+        s="Require FaceID / Fingerprint on app launch"
+        on={bio}
+        set={() => {
+          const next = !bio
+          setBio(next)
+          localStorage.setItem('biometric_enabled', next ? '1' : '0')
+          if (next) localStorage.setItem('biometric_locked', '1')
+          toast(next ? 'Biometric Lock Enabled' : 'Biometric Lock Disabled')
+        }}
+      />
       <div className="row sb" style={{ gap: 8, marginTop: 4 }}>
         <button className="btn o" style={{ flex: 1, padding: '8px 12px', fontSize: 12 }} onClick={onOpenMobile}>
-          <I n="qr_code_2" s={16} /> Open on Mobile Phone
+          <I n="phone_iphone" s={16} /> Open on Mobile Phone
         </button>
         <button className="btn" style={{ flex: 1, padding: '8px 12px', fontSize: 12, background: '#4F46E5' }} onClick={onLock}>
           <I n="lock" s={16} c="#fff" /> Lock with Biometric
