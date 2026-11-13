@@ -11,8 +11,9 @@ import webbrowser
 from pathlib import Path
 from typing import Any, Dict, List, Optional
 
-user32 = ctypes.windll.user32
-kernel32 = ctypes.windll.kernel32
+_windll = getattr(ctypes, "windll", None)
+user32 = getattr(_windll, "user32", None) if _windll else None
+kernel32 = getattr(_windll, "kernel32", None) if _windll else None
 
 # Virtual Key codes for Windows media & system control
 VK_LWIN = 0x5B
@@ -139,6 +140,8 @@ class _MEMORYSTATUSEX(ctypes.Structure):
 
 
 def _tap_key(vk: int, count: int = 1):
+    if not user32:
+        return
     for _ in range(max(1, count)):
         user32.keybd_event(vk, 0, 0, 0)
         time.sleep(0.01)
@@ -147,6 +150,8 @@ def _tap_key(vk: int, count: int = 1):
 
 
 def _combo_key(mod_vk: int, key_vk: int):
+    if not user32:
+        return
     user32.keybd_event(mod_vk, 0, 0, 0)
     time.sleep(0.02)
     user32.keybd_event(key_vk, 0, 0, 0)
@@ -188,26 +193,29 @@ def get_laptop_info() -> Dict[str, Any]:
         info["local_ip"] = "127.0.0.1"
 
     try:
-        pwr = _SYSTEM_POWER_STATUS()
-        if kernel32.GetSystemPowerStatus(ctypes.byref(pwr)):
-            pct = int(pwr.BatteryLifePercent)
-            info["battery_pct"] = pct if 0 <= pct <= 100 else None
-            info["charging"] = bool(pwr.ACLineStatus == 1)
+        if kernel32:
+            pwr = _SYSTEM_POWER_STATUS()
+            if kernel32.GetSystemPowerStatus(ctypes.byref(pwr)):
+                pct = int(pwr.BatteryLifePercent)
+                info["battery_pct"] = pct if 0 <= pct <= 100 else None
+                info["charging"] = bool(pwr.ACLineStatus == 1)
     except Exception:
         pass
 
     try:
-        mem = _MEMORYSTATUSEX()
-        mem.dwLength = ctypes.sizeof(_MEMORYSTATUSEX)
-        if kernel32.GlobalMemoryStatusEx(ctypes.byref(mem)):
-            info["ram_used_pct"] = int(mem.dwMemoryLoad)
-            info["ram_free_gb"] = round(mem.ullAvailPhys / (1024 ** 3), 1)
-            info["ram_total_gb"] = round(mem.ullTotalPhys / (1024 ** 3), 1)
+        if kernel32:
+            mem = _MEMORYSTATUSEX()
+            mem.dwLength = ctypes.sizeof(_MEMORYSTATUSEX)
+            if kernel32.GlobalMemoryStatusEx(ctypes.byref(mem)):
+                info["ram_used_pct"] = int(mem.dwMemoryLoad)
+                info["ram_free_gb"] = round(mem.ullAvailPhys / (1024 ** 3), 1)
+                info["ram_total_gb"] = round(mem.ullTotalPhys / (1024 ** 3), 1)
     except Exception:
         pass
 
     try:
-        du = shutil.disk_usage("C:\\")
+        root_path = "C:\\" if os.name == "nt" else "/"
+        du = shutil.disk_usage(root_path)
         info["disk_free_gb"] = round(du.free / (1024 ** 3), 1)
         info["disk_total_gb"] = round(du.total / (1024 ** 3), 1)
     except Exception:
