@@ -221,38 +221,33 @@ void poll_air_quality() {
 
 // =========================================================================
 // 3. SINGLE PIR MOTION SENSOR (BOARD 3: CONFERENCE ROOM)
-// Wiring to Waveshare Pico Header:
-// - PIR VCC: 5V         (Physical Pin 40 / VSYS or Pin 36 / 3V3)
-// - PIR GND: GND        (Physical Pin 38 or Pin 3)
-// - PIR OUT: IO4        (GPIO 4 / Physical Pin 6)  [also monitors IO6 / GPIO 6]
+// EXACT 3-WIRE WIRING CONNECTION:
+// 1. VCC -> 5V  (Waveshare Pico Physical Pin 40 / VSYS 5V)
+// 2. GND -> GND (Waveshare Pico Physical Pin 38 or Pin 3 / GND)
+// 3. OUT -> IO4 (Waveshare Pico Physical Pin 6  / GPIO 4)
 // =========================================================================
 #if HAS_PIR
-#define PIR_PIN 4      // Primary PIR pin (GPIO 4)
-#define PIR_ALT_PIN 6  // Secondary / fallback PIR pin (GPIO 6)
-#define PIR_HOLD_MS 10000 // Keep Occupied for 10s after motion stops
+#define PIR_PIN 4         // Sole PIR Output Pin: GPIO 4 (Physical Pin 6)
+#define PIR_HOLD_MS 10000 // Keep Occupied for 10 seconds after motion stops
 
 bool pir_active = false;
 bool is_occupied = false;
 unsigned long last_motion_time = 0;
-int last_r4 = 0;
-int last_r6 = 0;
+int last_pin4 = 0;
 unsigned long total_motion_hits = 0;
 
 void init_pir() {
   pinMode(PIR_PIN, INPUT_PULLDOWN);
-  pinMode(PIR_ALT_PIN, INPUT_PULLDOWN);
-  Serial.printf("[PIR DYNAMIC] Ultra-fast dynamic motion sensor active on IO4 & IO6\n");
+  Serial.println("[PIR] Active on IO4 (GPIO 4 / Physical Pin 6) | Connections: VCC=5V, GND=GND, OUT=IO4");
 }
 
 void poll_pir() {
   unsigned long now = millis();
   int r4 = digitalRead(PIR_PIN);
-  int r6 = digitalRead(PIR_ALT_PIN);
-  last_r4 = r4;
-  last_r6 = r6;
+  last_pin4 = r4;
 
-  // DYNAMIC ZERO-DELAY DETECTION: If sensor output is HIGH on either pin, you are in the room!
-  if (r4 == HIGH || r6 == HIGH) {
+  // DYNAMIC ZERO-DELAY SENSING ON IO4 ONLY
+  if (r4 == HIGH) {
     pir_active = true;
     last_motion_time = now;
 
@@ -260,27 +255,27 @@ void poll_pir() {
       is_occupied = true;
       total_motion_hits++;
       Serial.printf("\n=======================================================\n");
-      Serial.printf("  [CONFERENCE] >>> DYNAMIC MOTION DETECTED -> OCCUPIED <<<\n");
-      Serial.printf("  Trigger Pin: %s | Hit #%lu\n", (r4 == HIGH) ? "IO4" : "IO6", total_motion_hits);
+      Serial.printf("  [CONFERENCE] >>> MOTION DETECTED ON IO4 -> OCCUPIED <<<\n");
+      Serial.printf("  Signal: IO4=HIGH (5V VCC powered) | Hit #%lu\n", total_motion_hits);
       Serial.printf("=======================================================\n\n");
     }
   } else {
     pir_active = false;
   }
 
-  // Auto-vacate dynamically after 10 seconds without any motion
+  // Auto-vacate dynamically after 10 seconds without motion
   if (is_occupied && (now - last_motion_time > PIR_HOLD_MS)) {
     is_occupied = false;
-    Serial.printf("\n[CONFERENCE] --- Room Vacant (No motion for %ds) -> NOT OCCUPIED ---\n\n", PIR_HOLD_MS / 1000);
+    Serial.printf("\n[CONFERENCE] --- No motion on IO4 for %ds -> NOT OCCUPIED (VACANT) ---\n\n", PIR_HOLD_MS / 1000);
   }
 
-  // Live status heartbeat every 1.5 seconds so you can see current live state
+  // Live status heartbeat every 1.5 seconds in Serial Monitor
   static unsigned long last_heartbeat = 0;
   if (now - last_heartbeat >= 1500) {
     last_heartbeat = now;
-    Serial.printf("[PIR LIVE] IO4=%d | IO6=%d | State=%s | Hits=%lu | Status=%s\n",
-                  r4, r6, pir_active ? "MOTION" : "IDLE", total_motion_hits,
-                  is_occupied ? "OCCUPIED" : "VACANT");
+    Serial.printf("[PIR LIVE] OUT (IO4)=%d | State=%s | Hits=%lu | Status=%s\n",
+                  r4, pir_active ? "MOTION" : "IDLE", total_motion_hits,
+                  is_occupied ? "OCCUPIED" : "NOT OCCUPIED (VACANT)");
   }
 }
 #endif
@@ -321,7 +316,7 @@ String json() {
   s += ",\"pir\":" + String(pir_active ? "true" : "false");
   s += ",\"pir1\":" + String(pir_active ? "true" : "false");
   s += ",\"seconds_ago\":" + String(last_motion_time > 0 ? (millis() - last_motion_time) / 1000 : 999);
-  s += ",\"pin4\":" + String(last_r4) + ",\"pin6\":" + String(last_r6);
+  s += ",\"pin4\":" + String(last_pin4);
   s += ",\"hits\":" + String(total_motion_hits);
   s += "}";
 #endif
