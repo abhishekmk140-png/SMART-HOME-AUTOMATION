@@ -446,34 +446,10 @@ def _poll_single_host(h, p):
                             target_host = target_r.get("esp32_url", "").replace("http://", "").replace("https://", "").split("/")[0].split(":")[0]
                             if target_host == h:
                                 prev_occ = target_r.get("occupancy", {})
-                                if has_fw_debounce:
-                                    is_warmup = bool(occ.get("warmup", False))
-                                    effective_occ = False if is_warmup else (raw_occ or raw_pir)
-                                    effective_pir = False if is_warmup else raw_pir
-                                    hold_until = now_ts + 4.0 if effective_pir else prev_occ.get("_hold_until", 0.0)
-                                    clean_sec_ago = 999 if is_warmup else sec_ago
-                                    last_real_ts = prev_occ.get("_last_real_ts", 0.0)
-                                    pir_streak = 0
-                                else:
-                                    # Old firmware without pulse-width filter fires short EMI spikes;
-                                    # require 2 consecutive raw_pir=True polls (~0.4s+ sustained) to confirm genuine motion, then hold 8s.
-                                    prev_hold = float(prev_occ.get("_hold_until", 0.0) or 0.0)
-                                    last_real_ts = float(prev_occ.get("_last_real_ts", 0.0) or 0.0)
-                                    pir_streak = (int(prev_occ.get("_pir_streak", 0) or 0) + 1) if raw_pir else 0
-                                    if pir_streak >= 2:
-                                        hold_until = now_ts + 8.0
-                                        last_real_ts = now_ts
-                                        effective_occ = True
-                                        effective_pir = True
-                                    elif now_ts < prev_hold:
-                                        hold_until = prev_hold
-                                        effective_occ = True
-                                        effective_pir = False
-                                    else:
-                                        hold_until = 0.0
-                                        effective_occ = False
-                                        effective_pir = False
-                                    clean_sec_ago = int(now_ts - last_real_ts) if last_real_ts > 0 else 999
+                                effective_occ = raw_occ or raw_pir
+                                effective_pir = raw_pir
+                                clean_sec_ago = sec_ago
+                                last_real_ts = now_ts if effective_occ else prev_occ.get("_last_real_ts", 0.0)
 
                                 if prev_occ.get("occupied") != effective_occ or prev_occ.get("pir") != effective_pir or not target_r.get("has_pir"):
                                     changed = True
@@ -483,10 +459,8 @@ def _poll_single_host(h, p):
                                     "pir": effective_pir,
                                     "pir1": effective_pir,
                                     "seconds_ago": clean_sec_ago,
-                                    "warmup": is_warmup if has_fw_debounce else False,
-                                    "_hold_until": hold_until,
+                                    "warmup": False,
                                     "_last_real_ts": last_real_ts,
-                                    "_pir_streak": pir_streak if not has_fw_debounce else 0,
                                 }
                                 target_r["has_pir"] = True
 

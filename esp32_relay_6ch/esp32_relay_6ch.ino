@@ -227,115 +227,60 @@ void poll_air_quality() {
 // - PIR OUT: IO4        (GPIO 4 / Physical Pin 6)  [also monitors IO6 / GPIO 6]
 // =========================================================================
 #if HAS_PIR
-#define PIR_PIN 4                // Default connected to IO4 (GPIO 4)
-#define PIR_ALT_PIN 6            // Also monitors IO6 (GPIO 6) as auto-fallback
-#define PIR_SAMPLE_MS 10         // Debounce sample interval (10ms)
-#define PIR_CONFIRM_SAMPLES 3    // Require 3 consecutive HIGH samples (30ms) to trigger genuine motion!
-#define PIR_HOLD_MS 15000        // Keep occupied for 15s after confirmed motion ends
-#define PIR_BOOT_SETTLE_MS 10000 // Ignore power-on / HC-SR501 warm-up calibration spikes for 10s
+#define PIR_PIN 4      // Primary PIR pin (GPIO 4)
+#define PIR_ALT_PIN 6  // Secondary / fallback PIR pin (GPIO 6)
+#define PIR_HOLD_MS 10000 // Keep Occupied for 10s after motion stops
 
 bool pir_active = false;
 bool is_occupied = false;
-bool pir_warmup = true;
 unsigned long last_motion_time = 0;
-unsigned long last_sample_time = 0;
-unsigned long pir_boot_time = 0;
-int streak_pin4 = 0;
-int streak_pin6 = 0;
 int last_r4 = 0;
 int last_r6 = 0;
-unsigned long noise_rejected = 0;
-unsigned long pin4_hits = 0;
-unsigned long pin6_hits = 0;
-bool last_confirmed_state = false;
+unsigned long total_motion_hits = 0;
 
 void init_pir() {
   pinMode(PIR_PIN, INPUT_PULLDOWN);
   pinMode(PIR_ALT_PIN, INPUT_PULLDOWN);
-  pir_boot_time = millis();
-  pir_warmup = true;
-  Serial.printf("[PIR] Debounced PIR Sensor Active on IO4 (GPIO %d) & IO6 (GPIO %d) | Confirm=%dms | Hold=%ds | Warmup=%ds\n",
-                PIR_PIN, PIR_ALT_PIN, PIR_SAMPLE_MS * PIR_CONFIRM_SAMPLES, PIR_HOLD_MS / 1000, PIR_BOOT_SETTLE_MS / 1000);
+  Serial.printf("[PIR DYNAMIC] Ultra-fast dynamic motion sensor active on IO4 & IO6\n");
 }
 
 void poll_pir() {
   unsigned long now = millis();
-  if (now - last_sample_time < PIR_SAMPLE_MS) return;
-  last_sample_time = now;
-
   int r4 = digitalRead(PIR_PIN);
   int r6 = digitalRead(PIR_ALT_PIN);
   last_r4 = r4;
   last_r6 = r6;
 
-  // Ignore initial Wi-Fi startup & PIR sensor warm-up calibration pulses
-  if (now - pir_boot_time < PIR_BOOT_SETTLE_MS) {
-    pir_warmup = true;
-    streak_pin4 = 0;
-    streak_pin6 = 0;
-    pir_active = false;
-    is_occupied = false;
-    return;
-  }
-  pir_warmup = false;
-
-  if (r4 == HIGH) {
-    if (streak_pin4 < PIR_CONFIRM_SAMPLES) streak_pin4++;
-    if (streak_pin4 == PIR_CONFIRM_SAMPLES && !last_confirmed_state) pin4_hits++;
-  } else {
-    if (streak_pin4 > 0 && streak_pin4 < PIR_CONFIRM_SAMPLES) {
-      noise_rejected++;
-      Serial.printf("[PIR NOISE] Ignored %dms spike on IO4 (total rejected=%lu)\n",
-                    streak_pin4 * PIR_SAMPLE_MS, noise_rejected);
-    }
-    streak_pin4 = 0;
-  }
-
-  if (r6 == HIGH) {
-    if (streak_pin6 < PIR_CONFIRM_SAMPLES) streak_pin6++;
-    if (streak_pin6 == PIR_CONFIRM_SAMPLES && !last_confirmed_state) pin6_hits++;
-  } else {
-    if (streak_pin6 > 0 && streak_pin6 < PIR_CONFIRM_SAMPLES) {
-      noise_rejected++;
-      Serial.printf("[PIR NOISE] Ignored %dms spike on IO6 (total rejected=%lu)\n",
-                    streak_pin6 * PIR_SAMPLE_MS, noise_rejected);
-    }
-    streak_pin6 = 0;
-  }
-
-  bool confirmed = (streak_pin4 >= PIR_CONFIRM_SAMPLES) || (streak_pin6 >= PIR_CONFIRM_SAMPLES);
-  pir_active = confirmed;
-
-  if (confirmed != last_confirmed_state) {
-    last_confirmed_state = confirmed;
-    Serial.printf("[PIR] Confirmed state=%s (IO4=%d, IO6=%d, hits4=%lu, hits6=%lu)\n",
-                  confirmed ? "HIGH" : "LOW", r4, r6, pin4_hits, pin6_hits);
-  }
-
-  if (confirmed) {
+  // DYNAMIC ZERO-DELAY DETECTION: If sensor output is HIGH on either pin, you are in the room!
+  if (r4 == HIGH || r6 == HIGH) {
+    pir_active = true;
     last_motion_time = now;
+
     if (!is_occupied) {
       is_occupied = true;
+      total_motion_hits++;
       Serial.printf("\n=======================================================\n");
-      Serial.printf("  [CONFERENCE] >>> MOTION DETECTED -> OCCUPIED <<<     \n");
+      Serial.printf("  [CONFERENCE] >>> DYNAMIC MOTION DETECTED -> OCCUPIED <<<\n");
+      Serial.printf("  Trigger Pin: %s | Hit #%lu\n", (r4 == HIGH) ? "IO4" : "IO6", total_motion_hits);
       Serial.printf("=======================================================\n\n");
     }
-  } else if (is_occupied && (now - last_motion_time > PIR_HOLD_MS)) {
-    is_occupied = false;
-    Serial.printf("\n[CONFERENCE] --- No motion for %ds -> VACANT (NOT OCCUPIED) ---\n\n", PIR_HOLD_MS / 1000);
+  } else {
+    pir_active = false;
   }
 
-  // Live Serial Monitor heartbeat so you always see current state
+  // Auto-vacate dynamically after 10 seconds without any motion
+  if (is_occupied && (now - last_motion_time > PIR_HOLD_MS)) {
+    is_occupied = false;
+    Serial.printf("\n[CONFERENCE] --- Room Vacant (No motion for %ds) -> NOT OCCUPIED ---\n\n", PIR_HOLD_MS / 1000);
+  }
+
+  // Live status heartbeat every 1.5 seconds so you can see current live state
   static unsigned long last_heartbeat = 0;
   if (now - last_heartbeat >= 1500) {
     last_heartbeat = now;
-    if (now - pir_boot_time < PIR_BOOT_SETTLE_MS) {
-      Serial.printf("[PIR WARMUP] Stabilizing... %lu s left\n", (PIR_BOOT_SETTLE_MS - (now - pir_boot_time)) / 1000);
-    } else {
-      Serial.printf("[PIR SENSOR] IO4=%d | IO6=%d | State=%s | TotalHits=%lu | Status=%s\n",
-                    r4, r6, pir_active ? "MOTION" : "IDLE", pin4_hits + pin6_hits,
-                    is_occupied ? "OCCUPIED" : "NOT OCCUPIED (VACANT)");
-    }
+    Serial.printf("[PIR LIVE] IO4=%d | IO6=%d | State=%s | Hits=%lu | Status=%s\n",
+                  r4, r6, pir_active ? "MOTION" : "IDLE", total_motion_hits,
+                  is_occupied ? "OCCUPIED" : "VACANT");
   }
 }
 #endif
@@ -377,9 +322,7 @@ String json() {
   s += ",\"pir1\":" + String(pir_active ? "true" : "false");
   s += ",\"seconds_ago\":" + String(last_motion_time > 0 ? (millis() - last_motion_time) / 1000 : 999);
   s += ",\"pin4\":" + String(last_r4) + ",\"pin6\":" + String(last_r6);
-  s += ",\"hits4\":" + String(pin4_hits) + ",\"hits6\":" + String(pin6_hits);
-  s += ",\"warmup\":" + String(pir_warmup ? "true" : "false");
-  s += ",\"noise_filtered\":" + String(noise_rejected);
+  s += ",\"hits\":" + String(total_motion_hits);
   s += "}";
 #endif
 
@@ -517,9 +460,6 @@ void setup() {
 
   server.begin();
   udp.begin(UDP_PORT);
-#if HAS_PIR
-  pir_boot_time = millis(); // Start warm-up blanking after Wi-Fi TX settles
-#endif
   Serial.printf("[READY] HTTP Port 80 & Fast UDP Port %d Active\n", UDP_PORT);
 }
 
