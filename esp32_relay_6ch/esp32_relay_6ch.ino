@@ -230,9 +230,9 @@ void poll_air_quality() {
 #define PIR_PIN 4                // Default connected to IO4 (GPIO 4)
 #define PIR_ALT_PIN 6            // Also monitors IO6 (GPIO 6) as auto-fallback
 #define PIR_SAMPLE_MS 10         // Debounce sample interval (10ms)
-#define PIR_CONFIRM_SAMPLES 8    // Require 8 consecutive HIGH samples (80ms) to trigger genuine motion!
-#define PIR_HOLD_MS 12000        // Keep occupied for 12s after confirmed motion ends
-#define PIR_BOOT_SETTLE_MS 15000 // Ignore power-on / HC-SR501 warm-up calibration spikes for 15s
+#define PIR_CONFIRM_SAMPLES 3    // Require 3 consecutive HIGH samples (30ms) to trigger genuine motion!
+#define PIR_HOLD_MS 15000        // Keep occupied for 15s after confirmed motion ends
+#define PIR_BOOT_SETTLE_MS 10000 // Ignore power-on / HC-SR501 warm-up calibration spikes for 10s
 
 bool pir_active = false;
 bool is_occupied = false;
@@ -316,11 +316,26 @@ void poll_pir() {
     last_motion_time = now;
     if (!is_occupied) {
       is_occupied = true;
-      Serial.println("[CONFERENCE] >>> CONFIRMED MOTION -> OCCUPIED <<<");
+      Serial.printf("\n=======================================================\n");
+      Serial.printf("  [CONFERENCE] >>> MOTION DETECTED -> OCCUPIED <<<     \n");
+      Serial.printf("=======================================================\n\n");
     }
   } else if (is_occupied && (now - last_motion_time > PIR_HOLD_MS)) {
     is_occupied = false;
-    Serial.printf("[CONFERENCE] --- No motion for %ds -> VACANT ---\n", PIR_HOLD_MS / 1000);
+    Serial.printf("\n[CONFERENCE] --- No motion for %ds -> VACANT (NOT OCCUPIED) ---\n\n", PIR_HOLD_MS / 1000);
+  }
+
+  // Live Serial Monitor heartbeat so you always see current state
+  static unsigned long last_heartbeat = 0;
+  if (now - last_heartbeat >= 1500) {
+    last_heartbeat = now;
+    if (now - pir_boot_time < PIR_BOOT_SETTLE_MS) {
+      Serial.printf("[PIR WARMUP] Stabilizing... %lu s left\n", (PIR_BOOT_SETTLE_MS - (now - pir_boot_time)) / 1000);
+    } else {
+      Serial.printf("[PIR SENSOR] IO4=%d | IO6=%d | State=%s | TotalHits=%lu | Status=%s\n",
+                    r4, r6, pir_active ? "MOTION" : "IDLE", pin4_hits + pin6_hits,
+                    is_occupied ? "OCCUPIED" : "NOT OCCUPIED (VACANT)");
+    }
   }
 }
 #endif
