@@ -230,9 +230,9 @@ void poll_air_quality() {
 #define PIR_PIN 4                // Default connected to IO4 (GPIO 4)
 #define PIR_ALT_PIN 6            // Also monitors IO6 (GPIO 6) as auto-fallback
 #define PIR_SAMPLE_MS 10         // Debounce sample interval (10ms)
-#define PIR_CONFIRM_SAMPLES 50   // Require 50 consecutive HIGH samples (500ms) to reject EMI/RF spikes
-#define PIR_HOLD_MS 4000         // Keep occupied for 4s after confirmed motion ends
-#define PIR_BOOT_SETTLE_MS 20000 // Ignore power-on / HC-SR501 warm-up calibration spikes for 20s
+#define PIR_CONFIRM_SAMPLES 8    // Require 8 consecutive HIGH samples (80ms) to trigger genuine motion!
+#define PIR_HOLD_MS 12000        // Keep occupied for 12s after confirmed motion ends
+#define PIR_BOOT_SETTLE_MS 15000 // Ignore power-on / HC-SR501 warm-up calibration spikes for 15s
 
 bool pir_active = false;
 bool is_occupied = false;
