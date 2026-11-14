@@ -2067,11 +2067,11 @@ function Automations({ rules, act, rooms = [], toast, isFull, onToggleFull, is3D
   const runLivelyTest = async (r: any) => {
     try {
       setTestingId(r.id)
-      joySound.play('click')
+      joySound.pop()
       toast && toast(`⚡ Simulating "${r.title}" lively...`)
       await api.triggerRule(r.id)
       await act(async () => {})
-      joySound.play('confirm')
+      joySound.sceneChime()
       toast && toast(`✅ ${r.title} fired! Hardware relays updated.`)
     } catch (e: any) {
       toast && toast(`Execution failed: ${e.message}`)
@@ -2197,8 +2197,6 @@ function Automations({ rules, act, rooms = [], toast, isFull, onToggleFull, is3D
       )}
     </>
   )
-}
-  </>
 }
 
 /* ---------------- Settings ---------------- */
