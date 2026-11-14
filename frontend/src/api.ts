@@ -75,6 +75,7 @@ export const api = {
   sensor: (r: string, t: string, value: number) => req('PUT', `/rooms/${r}/sensors/${t}`, { value }),
   createRule: (b: any) => req('POST', '/automations', b),
   toggleRule: (id: string) => req('PUT', `/automations/${id}/toggle`),
+  triggerRule: async (id: string) => (await req('POST', `/automations/${id}/trigger`)).json(),
   scene: (n: string) => req('POST', `/scenes/${n}`),
   relays: async () => (await req('GET', '/relays')).json(),
   setRelayUrl: async (url: string) => (await req('POST', '/relays/url', { url })).json(),

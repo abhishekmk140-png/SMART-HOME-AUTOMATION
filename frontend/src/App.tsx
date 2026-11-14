@@ -640,7 +640,7 @@ export default function App() {
         : <>
           {tab === 0 && <Dashboard rooms={rooms} M={M} onToggleRoom={onToggleRoom} onScene={onScene} reloadRooms={load} isFull={isFull} onToggleFull={toggleFull} onOpenMobile={() => setMobileModal(true)} onLock={() => setIsLocked(true)} act={act} toast={toast} open={setRoomId} livelyOn={livelyOn} onToggleLively={toggleLively} installPrompt={installPrompt} onInstallApp={onInstallApp} />}
           {tab === 1 && <Analytics rooms={rooms} M={M} isFull={isFull} onToggleFull={toggleFull} is3D={is3D} onToggle3D={toggle3D} onOpenMobile={() => setMobileModal(true)} onLock={() => setIsLocked(true)} livelyOn={livelyOn} onToggleLively={toggleLively} installPrompt={installPrompt} onInstallApp={onInstallApp} />}
-          {tab === 2 && <Automations rules={rules} act={act} isFull={isFull} onToggleFull={toggleFull} is3D={is3D} onToggle3D={toggle3D} onOpenMobile={() => setMobileModal(true)} onLock={() => setIsLocked(true)} livelyOn={livelyOn} onToggleLively={toggleLively} installPrompt={installPrompt} onInstallApp={onInstallApp} />}
+          {tab === 2 && <Automations rules={rules} act={act} rooms={rooms} toast={toast} isFull={isFull} onToggleFull={toggleFull} is3D={is3D} onToggle3D={toggle3D} onOpenMobile={() => setMobileModal(true)} onLock={() => setIsLocked(true)} livelyOn={livelyOn} onToggleLively={toggleLively} installPrompt={installPrompt} onInstallApp={onInstallApp} />}
           {tab === 3 && <Settings ok={ok} reload={load} toast={toast} isFull={isFull} onToggleFull={toggleFull} is3D={is3D} onToggle3D={toggle3D} onOpenMobile={() => setMobileModal(true)} onLock={() => setIsLocked(true)} livelyOn={livelyOn} onToggleLively={toggleLively} installPrompt={installPrompt} onInstallApp={onInstallApp} />}
         <div className="nav">
           {[
@@ -2020,43 +2020,184 @@ function Analytics({ rooms = [], M, isFull, onToggleFull, is3D, onToggle3D, onOp
 }
 
 /* ---------------- Automations ---------------- */
-function Automations({ rules, act, isFull, onToggleFull, is3D, onToggle3D, onOpenMobile, onLock, livelyOn, onToggleLively, installPrompt, onInstallApp }: any) {
+function Automations({ rules, act, rooms = [], toast, isFull, onToggleFull, is3D, onToggle3D, onOpenMobile, onLock, livelyOn, onToggleLively, installPrompt, onInstallApp }: any) {
   const [dlg, setDlg] = useState(false), [f, setF] = useState({ title: '', trig: 'temperature', th: 26, action: '' })
+  const [testingId, setTestingId] = useState<string | null>(null)
   const ic: any = { temperature: 'thermostat_auto', co2: 'air', humidity: 'water_drop', schedule: 'bedtime' }
   const badge: any = { temperature: 'Climate', co2: 'Health', humidity: 'Climate', schedule: 'Power' }
   const desc = () => f.trig === 'temperature' ? `Temp > ${f.th}°C` : f.trig === 'co2' ? `Air Quality > ${f.th} µg/m³` : f.trig === 'humidity' ? `Humidity > ${f.th}%` : `Time > ${f.th}:00`
-  return <><Header title="Automations" isFull={isFull} onToggleFull={onToggleFull} is3D={is3D} onToggle3D={onToggle3D} onOpenMobile={onOpenMobile} onLock={onLock} livelyOn={livelyOn} onToggleLively={onToggleLively} installPrompt={installPrompt} onInstallApp={onInstallApp} />
-  <div className="scroll col" style={{ gap: 14, paddingBottom: 92 }}>
-    {is3D && (
-      <div className="hero-3d">
-        <img src="/3d/automations_3d.jpg" alt="3D Neural Routine Engine" className="hero-3d-img" />
-        <div className="hero-3d-overlay">
-          <div>
-            <span className="hero-3d-badge">
-              <I n="psychology" s={14} c="#A78BFA" /> 3D AI ROUTINE ENGINE · ACTIVE
-            </span>
-            <div className="hero-3d-title">Autonomous Smart Core</div>
-            <div className="hero-3d-desc">Smart sensory circuit mesh synchronized with {rules.length} dynamic trigger routines</div>
+
+  const getLiveTelemetry = (r: any) => {
+    if (r.triggerType === 'temperature') {
+      const vals = (rooms || []).map((rm: any) => rm.tempSensor?.value).filter((v: any) => typeof v === 'number' && v > 0)
+      const current = vals.length ? Math.max(...vals) : 26.5
+      const isTriggered = r.isEnabled && (r.triggered || current > r.thresholdValue)
+      return {
+        valText: `${current.toFixed(1)}°C`,
+        statusText: isTriggered ? '🔥 ACTIVE ENFORCING' : '● MONITORING',
+        color: isTriggered ? '#EF4444' : '#10B981',
+        isTriggered
+      }
+    }
+    if (r.triggerType === 'co2') {
+      const vals = (rooms || []).map((rm: any) => rm.co2Sensor?.value).filter((v: any) => typeof v === 'number' && v > 0)
+      const current = vals.length ? Math.max(...vals) : 34
+      const isTriggered = r.isEnabled && (r.triggered || current > r.thresholdValue)
+      return {
+        valText: `${Math.round(current)} µg/m³`,
+        statusText: isTriggered ? '💨 PURIFYING AIR' : '● AIR HEALTHY',
+        color: isTriggered ? '#F59E0B' : '#10B981',
+        isTriggered
+      }
+    }
+    if (r.triggerType === 'schedule') {
+      const now = new Date()
+      const hr = now.getHours()
+      const isTriggered = r.isEnabled && (r.triggered || hr >= r.thresholdValue || hr < 5)
+      return {
+        valText: now.toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' }),
+        statusText: isTriggered ? '🌙 NIGHT MODE ENGAGED' : '● STANDBY (11:00 PM)',
+        color: isTriggered ? '#A78BFA' : '#38BDF8',
+        isTriggered
+      }
+    }
+    return { valText: 'Active', statusText: '● MONITORING', color: '#10B981', isTriggered: false }
+  }
+
+  const runLivelyTest = async (r: any) => {
+    try {
+      setTestingId(r.id)
+      joySound.play('click')
+      toast && toast(`⚡ Simulating "${r.title}" lively...`)
+      await api.triggerRule(r.id)
+      await act(async () => {})
+      joySound.play('confirm')
+      toast && toast(`✅ ${r.title} fired! Hardware relays updated.`)
+    } catch (e: any) {
+      toast && toast(`Execution failed: ${e.message}`)
+    } finally {
+      setTimeout(() => setTestingId(null), 1200)
+    }
+  }
+
+  return (
+    <>
+      <Header title="Automations" isFull={isFull} onToggleFull={onToggleFull} is3D={is3D} onToggle3D={onToggle3D} onOpenMobile={onOpenMobile} onLock={onLock} livelyOn={livelyOn} onToggleLively={onToggleLively} installPrompt={installPrompt} onInstallApp={onInstallApp} />
+      <div className="scroll col" style={{ gap: 14, paddingBottom: 92 }}>
+        {is3D && (
+          <div className="hero-3d">
+            <img src="/3d/automations_3d.jpg" alt="3D Neural Routine Engine" className="hero-3d-img" />
+            <div className="hero-3d-overlay">
+              <div>
+                <span className="hero-3d-badge">
+                  <I n="psychology" s={14} c="#A78BFA" /> 3D AI ROUTINE ENGINE · LIVELY
+                </span>
+                <div className="hero-3d-title">Autonomous Smart Core</div>
+                <div className="hero-3d-desc">Smart sensory circuit mesh synchronized with {rules.length} dynamic trigger routines</div>
+              </div>
+              <div className="hero-3d-chips">
+                <span className="hero-3d-node on"><I n="check_circle" s={13} c="#10B981" /> <b>{rules.filter((r: any) => r.isEnabled).length} Active Rules</b></span>
+                <span className="hero-3d-node"><I n="bolt" s={13} c="#38BDF8" /> <b>Lively Engine Active</b></span>
+              </div>
+            </div>
           </div>
-          <div className="hero-3d-chips">
-            <span className="hero-3d-node on"><I n="check_circle" s={13} c="#10B981" /> <b>{rules.filter((r: any) => r.isEnabled).length} Active Rules</b></span>
-            <span className="hero-3d-node"><I n="memory" s={13} c="#A78BFA" /> <b>Sub-10ms</b> Cycle</span>
+        )}
+        <div className="row sb">
+          <div>
+            <span className="badge row" style={{ background: tint('#10B981'), color: '#10B981', gap: 5, width: 'fit-content' }}>
+              <div className="dot" style={{ background: '#10B981' }} />LIVELY SMART ENGINE ACTIVE (2.5s Auto-Loop)
+            </span>
+            <div style={{ fontSize: 22, fontWeight: 700, marginTop: 6 }}>Autonomous Control Hub</div>
           </div>
         </div>
+        <div className="row sb"><h3>Active Automations</h3><span className="mut" style={{ fontSize: 12 }}>Evaluates every 2.5s with hardware sync</span></div>
+        {rules.length === 0 ? (
+          <div className="card col" style={{ padding: 28, alignItems: 'center', textAlign: 'center' }}>
+            <b style={{ fontSize: 17 }}>No Rules Configured</b>
+            <div className="mut">Automate lighting, fans, or sockets based on telemetry triggers.</div>
+          </div>
+        ) : (
+          <div className="devices-grid">
+            {rules.map((r: any) => {
+              const live = getLiveTelemetry(r)
+              const isBusy = testingId === r.id
+              return (
+                <div
+                  key={r.id}
+                  className="card col"
+                  style={{
+                    padding: 16,
+                    gap: 12,
+                    opacity: r.isEnabled ? 1 : 0.6,
+                    border: live.isTriggered ? `1px solid ${live.color}` : '1px solid var(--border)',
+                    boxShadow: live.isTriggered ? `0 0 16px ${live.color}33` : 'none',
+                    transition: 'all 0.3s ease'
+                  }}
+                >
+                  <div className="row sb" style={{ alignItems: 'flex-start' }}>
+                    <div className="row g12" style={{ alignItems: 'flex-start' }}>
+                      <div style={{ width: 44, height: 44, flexShrink: 0, borderRadius: 12, background: tint(live.color || '#4F46E5'), display: 'grid', placeItems: 'center' }}>
+                        <I n={ic[r.triggerType] || 'bolt'} c={live.color || 'var(--pri)'} />
+                      </div>
+                      <div className="col g4">
+                        <div className="row g6">
+                          <b>{r.title}</b>
+                          <span className="badge" style={{ background: 'var(--c3)', color: 'var(--onv)', fontSize: 10 }}>{badge[r.triggerType]}</span>
+                        </div>
+                        <div className="mut" style={{ fontSize: 12 }}>{r.description}</div>
+                        <div style={{ fontSize: 12, color: 'var(--pri)', fontWeight: 600 }}>{r.actionDescription}</div>
+                      </div>
+                    </div>
+                    <Sw on={r.isEnabled} set={() => act(() => api.toggleRule(r.id))} />
+                  </div>
+
+                  <div className="row sb" style={{ paddingTop: 8, borderTop: '1px solid rgba(255,255,255,0.06)', fontSize: 11 }}>
+                    <span className="row g6" style={{ color: live.color, fontWeight: 700 }}>
+                      <span style={{ display: 'inline-block', width: 7, height: 7, borderRadius: '50%', background: live.color }} />
+                      {live.valText} · {live.statusText}
+                    </span>
+                    <button
+                      className="btn"
+                      style={{ padding: '4px 10px', fontSize: 11, background: isBusy ? '#10B981' : 'rgba(255,255,255,0.08)', color: isBusy ? '#fff' : 'var(--pri)', border: '1px solid rgba(255,255,255,0.1)' }}
+                      onClick={() => runLivelyTest(r)}
+                      disabled={isBusy}
+                    >
+                      {isBusy ? '⚡ Triggered!' : '⚡ Test Run Lively'}
+                    </button>
+                  </div>
+                </div>
+              )
+            })}
+          </div>
+        )}
       </div>
-    )}
-    <div className="row sb"><div><span className="badge row" style={{ background: tint('#10B981'), color: '#10B981', gap: 5, width: 'fit-content' }}><div className="dot" />SMART ENGINE ACTIVE</span><div style={{ fontSize: 22, fontWeight: 700, marginTop: 6 }}>Autonomous Control Hub</div></div></div>
-    <div className="row sb"><h3>Active Automations</h3><button className="btn t" style={{ padding: 0 }}>Filter Rules</button></div>
-    {rules.length === 0 ? <div className="card col" style={{ padding: 28, alignItems: 'center', textAlign: 'center' }}><b style={{ fontSize: 17 }}>No Rules Configured</b><div className="mut">Automate lighting, fans, or sockets based on telemetry triggers.</div></div>
-      : <div className="devices-grid">{rules.map(r => <div key={r.id} className="card row sb" style={{ padding: 16, opacity: r.isEnabled ? 1 : .6 }}><div className="row g12"><div style={{ width: 44, height: 44, flexShrink: 0, borderRadius: 12, background: tint('#4F46E5'), display: 'grid', placeItems: 'center' }}><I n={ic[r.triggerType]} c="var(--pri)" /></div>
-        <div><b>{r.title}</b> <span className="badge" style={{ background: 'var(--c3)', color: 'var(--onv)', marginLeft: 4 }}>{badge[r.triggerType]}</span><div className="mut">{r.description}</div><div style={{ fontSize: 12, color: 'var(--pri)', fontWeight: 500 }}>{r.actionDescription}</div></div></div>
-        <Sw on={r.isEnabled} set={() => act(() => api.toggleRule(r.id))} /></div>)}</div>}</div>
-    <button className="fab" onClick={() => setDlg(true)}><I n="add" c="#fff" />Add Custom Rule</button>
-    {dlg && <div className="modal"><div className="dlg col g12"><h3>Add Custom Rule</h3><div className="mut">Rule Title</div><input type="text" placeholder="e.g. Solar Eco Mode, High Heat Cooler" value={f.title} onChange={e => setF({ ...f, title: e.target.value })} />
-      <div className="mut">Trigger Condition</div><select value={f.trig} onChange={e => setF({ ...f, trig: e.target.value })}><option value="temperature">Temperature &gt; Threshold</option><option value="co2">Air Quality (µg/m³) &gt; Threshold</option><option value="schedule">Time Schedule &gt; Hour</option></select>
-      <div className="mut">Threshold: <b>{f.th}</b></div><input type="range" min={0} max={f.trig === 'co2' ? 500 : f.trig === 'schedule' ? 24 : 50} value={f.th} onChange={e => setF({ ...f, th: +e.target.value })} />
-      <div className="mut">Action Description</div><input type="text" placeholder="e.g. Fans → Speed Level 4" value={f.action} onChange={e => setF({ ...f, action: e.target.value })} />
-      <div className="row sb"><button className="btn t" onClick={() => setDlg(false)}>Cancel</button><button className="btn" onClick={() => { if (!f.title.trim()) return; act(() => api.createRule({ title: f.title, description: desc(), triggerType: f.trig, thresholdValue: f.th, actionDescription: 'Action: ' + (f.action || 'Custom') })); setDlg(false) }}>Save Rule</button></div></div></div>}
+      <button className="fab" onClick={() => setDlg(true)}><I n="add" c="#fff" />Add Custom Rule</button>
+      {dlg && (
+        <div className="modal">
+          <div className="dlg col g12">
+            <h3>Add Custom Rule</h3>
+            <div className="mut">Rule Title</div>
+            <input type="text" placeholder="e.g. Solar Eco Mode, High Heat Cooler" value={f.title} onChange={e => setF({ ...f, title: e.target.value })} />
+            <div className="mut">Trigger Condition</div>
+            <select value={f.trig} onChange={e => setF({ ...f, trig: e.target.value })}>
+              <option value="temperature">Temperature &gt; Threshold</option>
+              <option value="co2">Air Quality (µg/m³) &gt; Threshold</option>
+              <option value="schedule">Time Schedule &gt; Hour</option>
+            </select>
+            <div className="mut">Threshold: <b>{f.th}</b></div>
+            <input type="range" min={0} max={f.trig === 'co2' ? 500 : f.trig === 'schedule' ? 24 : 50} value={f.th} onChange={e => setF({ ...f, th: +e.target.value })} />
+            <div className="mut">Action Description</div>
+            <input type="text" placeholder="e.g. Fans → Speed Level 4" value={f.action} onChange={e => setF({ ...f, action: e.target.value })} />
+            <div className="row sb">
+              <button className="btn t" onClick={() => setDlg(false)}>Cancel</button>
+              <button className="btn" onClick={() => { if (!f.title.trim()) return; act(() => api.createRule({ title: f.title, description: desc(), triggerType: f.trig, thresholdValue: f.th, actionDescription: 'Action: ' + (f.action || 'Custom') })); setDlg(false) }}>Save Rule</button>
+            </div>
+          </div>
+        </div>
+      )}
+    </>
+  )
+}
   </>
 }
 

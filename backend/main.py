@@ -508,6 +508,90 @@ def _poll_single_host(h, p):
                 "mask": prev.get("mask", get_room_wire_mask(other))
             }
 
+def sync_relays(target_rid=None):
+    if target_rid:
+        for r in ROOMS:
+            if r["id"] == target_rid:
+                threading.Thread(target=_sync_single_room, args=(r,), daemon=True).start()
+                return
+    for r in ROOMS:
+        threading.Thread(target=_sync_single_room, args=(r,), daemon=True).start()
+
+def check_rules():
+    global RULES
+    changed_rooms = set()
+    now_hour = time.localtime().tm_hour
+    
+    for rule in RULES:
+        if not rule.get("isEnabled", False):
+            rule["triggered"] = False
+            continue
+            
+        trig = rule.get("triggerType")
+        th = float(rule.get("thresholdValue", 0))
+        is_active = False
+        
+        # 1. Temperature Trigger: Temp > threshold -> Fans Speed 4 & AC Cool
+        if trig == "temperature":
+            for r in ROOMS:
+                curr_t = float(r.get("tempSensor", {}).get("value", 0))
+                if curr_t > th:
+                    is_active = True
+                    for f in r.get("fans", []):
+                        if not f.get("isOn") or f.get("value") != 4.0:
+                            f["isOn"], f["value"] = True, 4.0
+                            changed_rooms.add(r["id"])
+                    for ac in r.get("acs", []):
+                        if not ac.get("isOn") or ac.get("value") != 22.0:
+                            ac["isOn"], ac["value"] = True, 22.0
+                            changed_rooms.add(r["id"])
+                            
+        # 2. Air Quality Trigger: Air Quality > threshold -> Exhaust Fan Speed 4
+        elif trig in ("co2", "air_quality"):
+            for r in ROOMS:
+                curr_co2 = float(r.get("co2Sensor", {}).get("value", 0))
+                if curr_co2 > th:
+                    is_active = True
+                    fans = r.get("fans", [])
+                    ex_fan = fans[1] if len(fans) >= 2 else (fans[0] if fans else None)
+                    if ex_fan and (not ex_fan.get("isOn") or ex_fan.get("value") != 4.0):
+                        ex_fan["isOn"], ex_fan["value"] = True, 4.0
+                        changed_rooms.add(r["id"])
+                        
+        # 3. Night Energy Saver: Time > 23:00 -> Off sockets, AC to 25°C & lower lights
+        elif trig in ("schedule", "time"):
+            if now_hour >= int(th) or now_hour < 5:
+                is_active = True
+                for r in ROOMS:
+                    for s in r.get("switches", []):
+                        if s.get("isOn"):
+                            s["isOn"] = False
+                            changed_rooms.add(r["id"])
+                    for i, l in enumerate(r.get("lights", [])):
+                        if i == 0 and l.get("isOn"):
+                            l["isOn"] = False
+                            changed_rooms.add(r["id"])
+                        elif i > 0 and l.get("isOn") and l.get("value", 100) > 30:
+                            l["value"] = 30.0
+                            changed_rooms.add(r["id"])
+                    for ac in r.get("acs", []):
+                        if ac.get("isOn") and ac.get("value") != 25.0:
+                            ac["value"] = 25.0
+                            changed_rooms.add(r["id"])
+                            
+        rule["triggered"] = is_active
+        rule["last_checked"] = time.strftime("%H:%M:%S")
+
+    if changed_rooms:
+        save_state()
+        for rid in changed_rooms:
+            try:
+                tr = find(rid)
+                _fire_udp_instantly(tr)
+                sync_relays(target_rid=rid)
+            except Exception as e:
+                print(f"[RULES] Sync error: {e}")
+
 def _background_health_poller():
     with ThreadPoolExecutor(max_workers=6) as pool:
         while True:
@@ -523,29 +607,11 @@ def _background_health_poller():
                         if h not in unique_hosts:
                             unique_hosts[h] = p
                 list(pool.map(lambda item: _poll_single_host(item[0], item[1]), unique_hosts.items()))
+                check_rules()
             except Exception:
                 pass
 
 threading.Thread(target=_background_health_poller, daemon=True).start()
-
-def sync_relays(target_rid=None):
-    if target_rid:
-        for r in ROOMS:
-            if r["id"] == target_rid:
-                threading.Thread(target=_sync_single_room, args=(r,), daemon=True).start()
-                return
-    for r in ROOMS:
-        threading.Thread(target=_sync_single_room, args=(r,), daemon=True).start()
-
-def check_rules():
-    for rule in RULES:
-        if not rule.get("isEnabled", False): continue
-        for r in ROOMS:
-            if rule.get("triggerType") == "temperature" and r.get("tempSensor", {}).get("value", 0) > rule.get("thresholdValue", 26):
-                for f in r.get("fans", []): 
-                    f["isOn"], f["value"] = True, 4.0
-            elif rule.get("triggerType") == "co2" and r.get("co2Sensor", {}).get("value", 0) > rule.get("thresholdValue", 75) and len(r.get("fans", [])) >= 2:
-                r["fans"][1]["isOn"], r["fans"][1]["value"] = True, 4.0
 
 @app.get("/health")
 @app.get("/api/health")
@@ -911,6 +977,61 @@ def toggle_rule(rid: str):
             save_state()
             return r
     raise HTTPException(404)
+
+@app.post("/api/automations/{rid}/trigger")
+def trigger_rule_now(rid: str):
+    target = None
+    for r in RULES:
+        if r["id"] == rid:
+            target = r
+            break
+    if not target:
+        raise HTTPException(404, "Rule not found")
+        
+    changed_rooms = set()
+    trig = target.get("triggerType")
+    
+    if trig == "temperature":
+        for r in ROOMS:
+            for f in r.get("fans", []):
+                f["isOn"], f["value"] = True, 4.0
+                changed_rooms.add(r["id"])
+            for ac in r.get("acs", []):
+                ac["isOn"], ac["value"] = True, 22.0
+                changed_rooms.add(r["id"])
+    elif trig in ("co2", "air_quality"):
+        for r in ROOMS:
+            fans = r.get("fans", [])
+            ex_fan = fans[1] if len(fans) >= 2 else (fans[0] if fans else None)
+            if ex_fan:
+                ex_fan["isOn"], ex_fan["value"] = True, 4.0
+                changed_rooms.add(r["id"])
+    elif trig in ("schedule", "time"):
+        for r in ROOMS:
+            for s in r.get("switches", []):
+                s["isOn"] = False
+                changed_rooms.add(r["id"])
+            for i, l in enumerate(r.get("lights", [])):
+                if i == 0:
+                    l["isOn"] = False
+                else:
+                    l["value"] = 30.0
+                changed_rooms.add(r["id"])
+            for ac in r.get("acs", []):
+                ac["value"] = 25.0
+                changed_rooms.add(r["id"])
+                
+    target["triggered"] = True
+    target["last_checked"] = time.strftime("%H:%M:%S")
+    save_state()
+    for rm_id in changed_rooms:
+        try:
+            tr = find(rm_id)
+            _fire_udp_instantly(tr)
+            sync_relays(target_rid=rm_id)
+        except Exception:
+            pass
+    return {"ok": True, "rule": target["title"], "triggered": True, "rooms": [r["name"] for r in ROOMS if r["id"] in changed_rooms]}
 
 @app.post("/api/scenes/{name}")
 def scene(name: str):
