@@ -769,9 +769,7 @@ function Dashboard({ rooms, M, onToggleRoom, onScene, reloadRooms, isFull, onTog
       <div className="scroll-chips">
         {[
           ['All Off', 'power_settings_new', 'pill-scene-alloff'],
-          ['All On', 'bolt', 'pill-scene-allon'],
-          ['Night Mode', 'dark_mode', 'pill-scene-night'],
-          ['Eco Mode', 'eco', 'pill-scene-eco']
+          ['All On', 'bolt', 'pill-scene-allon']
         ].map(([n, ic, cls]) =>
           <button
             key={n}
@@ -790,7 +788,7 @@ function Dashboard({ rooms, M, onToggleRoom, onScene, reloadRooms, isFull, onTog
         <span className="mut">{shown.length} shown</span>
       </div>
       <div className="scroll-chips">
-        {['All Rooms', 'Conference', 'Hall', 'Development Area', 'Bedroom', 'Kitchen', 'Bathroom'].map(c => (
+        {['All Rooms', 'Conference', 'Hall', 'Development Area'].map(c => (
           <button
             key={c}
             className={`pill joy-room-pill ${filter === c ? 'on' : ''}`}
@@ -897,7 +895,7 @@ function Dashboard({ rooms, M, onToggleRoom, onScene, reloadRooms, isFull, onTog
         <button className="btn" style={{ background: '#F43F5E' }} onClick={() => { act(() => api.deleteRoom(delRoom.id)); toast(`Removed ${delRoom.name}`); setDelRoom(null) }}>Delete</button>
       </div></div></div>}
     {sheet && <div className="modal" onClick={() => setSheet(false)}><div className="sheet" onClick={e => e.stopPropagation()}><h3 style={{ marginBottom: 12 }}>Quick Home Presets</h3>
-      {[['All Off (Emergency Shutdown)', 'Power down lights, fans, & sockets', 'All Off', 'power_settings_new', '#EF4444'], ['All On (Full Illumination)', 'Activate lighting and ventilation', 'All On', 'bolt', '#F59E0B'], ['Night Mode', 'Dim lights & activate quiet fan speeds', 'Night Mode', 'dark_mode', '#3525CD']].map(([t, s, n, ic, c]) =>
+      {[['All Off (Emergency Shutdown)', 'Power down lights, fans, & sockets', 'All Off', 'power_settings_new', '#EF4444'], ['All On (Full Illumination)', 'Activate lighting and ventilation', 'All On', 'bolt', '#F59E0B']].map(([t, s, n, ic, c]) =>
         <div key={n} className="row g12" style={{ padding: '12px 0', cursor: 'pointer' }} onClick={() => { doScene(n); setSheet(false) }}><I n={ic} c={c} /><div><b>{t}</b><div className="mut">{s}</div></div></div>)}</div></div>}
   </>
 }
