@@ -1613,14 +1613,14 @@ function Analytics({ rooms = [], M, isFull, onToggleFull, is3D, onToggle3D, onOp
                 position: 'absolute',
                 right: 0,
                 top: 'calc(100% + 6px)',
-                background: 'rgba(15, 23, 42, 0.96)',
+                background: '#ffffff',
                 backdropFilter: 'blur(16px)',
-                border: '1px solid rgba(255, 255, 255, 0.15)',
+                border: '1px solid #e2e8f0',
                 borderRadius: 14,
                 padding: 6,
                 minWidth: 220,
                 zIndex: 100,
-                boxShadow: '0 12px 32px rgba(0,0,0,0.6)',
+                boxShadow: '0 12px 32px rgba(15,23,42,0.12)',
                 display: 'flex',
                 flexDirection: 'column',
                 gap: 4,
@@ -1853,8 +1853,8 @@ function Analytics({ rooms = [], M, isFull, onToggleFull, is3D, onToggle3D, onOp
           <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(260px, 1fr))', gap: 12 }}>
             {/* Node 1: Engineering Hub */}
             <div style={{
-              background: 'rgba(15, 23, 42, 0.65)',
-              border: '1px solid rgba(56, 189, 248, 0.25)',
+              background: 'var(--c1)',
+              border: '1px solid rgba(56, 189, 248, 0.35)',
               borderRadius: 12,
               padding: 14,
               display: 'flex',
@@ -1882,8 +1882,8 @@ function Analytics({ rooms = [], M, isFull, onToggleFull, is3D, onToggle3D, onOp
 
             {/* Node 2: The Gallery */}
             <div style={{
-              background: 'rgba(15, 23, 42, 0.65)',
-              border: '1px solid rgba(16, 185, 129, 0.25)',
+              background: 'var(--c1)',
+              border: '1px solid rgba(16, 185, 129, 0.35)',
               borderRadius: 12,
               padding: 14,
               display: 'flex',
@@ -1911,7 +1911,7 @@ function Analytics({ rooms = [], M, isFull, onToggleFull, is3D, onToggle3D, onOp
 
             {/* Node 3: Conference Room */}
             <div style={{
-              background: 'rgba(15, 23, 42, 0.65)',
+              background: 'var(--c1)',
               border: `1px solid ${confRoom?.occupancy?.occupied ? 'rgba(16, 185, 129, 0.4)' : 'rgba(239, 68, 68, 0.35)'}`,
               borderRadius: 12,
               padding: 14,
