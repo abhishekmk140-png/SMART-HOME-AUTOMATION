@@ -1,6 +1,5 @@
 import { useCallback, useEffect, useRef, useState, ReactNode } from 'react'
 import { api, baseUrl, setBaseUrl, Room, Rule, Dev, Sensor } from './api'
-import Lively3DSmartHomeBg from './Lively3DSmartHomeBg'
 import { joySound, burstJoy } from './joy'
 
 const I = ({ n, c, s, o = true, cls = '', st = {} }: { n: string; c?: string; s?: number; o?: boolean; cls?: string; st?: any }) =>
@@ -631,7 +630,6 @@ export default function App() {
   const room = rooms.find(r => r.id === roomId)
 
   return <>
-    {livelyOn && <Lively3DSmartHomeBg />}
     <div className={`app ${isFull ? 'fullscreen' : ''}`}>
       {isLocked && <BiometricLockScreen onUnlock={() => { setIsLocked(false); localStorage.removeItem('biometric_locked'); toast('Biometric Verified — Welcome!') }} />}
       {mobileModal && <MobileAccessModal close={() => setMobileModal(false)} onLock={() => setIsLocked(true)} installPrompt={installPrompt} onInstallApp={onInstallApp} />}
@@ -2222,15 +2220,6 @@ function Settings({ ok, reload, toast, isFull, onToggleFull, is3D, onToggle3D, o
           const next = joySound.toggle()
           setSoundOn(next)
           toast(next ? 'Sound Effects Enabled 🔊' : 'Sound Effects Muted 🔇')
-        }}
-      />
-      <Row
-        ic="hub"
-        t="3D Lively Smart Home Mesh"
-        s="Hardware-accelerated 3D parallax environment"
-        on={livelyOn}
-        set={() => {
-          if (onToggleLively) onToggleLively()
         }}
       />
       <Row
