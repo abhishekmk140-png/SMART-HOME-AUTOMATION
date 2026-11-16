@@ -435,7 +435,8 @@ def _poll_single_host(h, p):
                         now_ts = time.time()
                         for target_r in ROOMS:
                             target_host = target_r.get("esp32_url", "").replace("http://", "").replace("https://", "").split("/")[0].split(":")[0]
-                            if target_host == h:
+                            is_target = (target_host == h) or (sdata.get("board_id") == 3 and "conference" in target_r.get("name", "").lower())
+                            if is_target:
                                 prev_occ = target_r.get("occupancy", {})
                                 effective_occ = raw_occ or raw_pir
                                 effective_pir = raw_pir

@@ -4,7 +4,7 @@
       "id": "room_r1793692482928",
       "name": "THE GALLERY",
       "category": "Hall",
-      "esp32_url": "http://192.168.1.11",
+      "esp32_url": "http://192.168.1.14",
       "lights": [
         {
           "id": "r1793692482928_light_1",
@@ -61,29 +61,30 @@
       "tempSensor": {
         "id": "r1793692482928_sensor_temp",
         "name": "Temperature",
-        "value": 26.8,
+        "value": 28.0,
         "unit": "\u00b0C"
       },
       "humSensor": {
         "id": "r1793692482928_sensor_hum",
         "name": "Humidity",
-        "value": 52.3,
+        "value": 42.2,
         "unit": "%"
       },
       "co2Sensor": {
         "id": "r1793692482928_sensor_co2",
         "name": "Air Quality",
-        "value": 24,
+        "value": 141.0,
         "unit": "\u00b5g/m\u00b3"
       },
       "acs": [],
-      "has_am2315c": true
+      "has_am2315c": true,
+      "has_aqi": true
     },
     {
       "id": "room_r1793692559305",
       "name": "ENGINEERING HUB",
       "category": "Development Area",
-      "esp32_url": "http://192.168.1.10",
+      "esp32_url": "http://192.168.1.14",
       "lights": [
         {
           "id": "r1793692559305_light_1",
@@ -141,23 +142,24 @@
       "tempSensor": {
         "id": "r1793692559305_sensor_temp",
         "name": "Temperature",
-        "value": 24.5,
+        "value": 28.0,
         "unit": "\u00b0C"
       },
       "humSensor": {
         "id": "r1793692559305_sensor_hum",
         "name": "Humidity",
-        "value": 48,
+        "value": 42.2,
         "unit": "%"
       },
       "co2Sensor": {
         "id": "r1793692559305_sensor_co2",
         "name": "Air Quality",
-        "value": 30.0,
+        "value": 141.0,
         "unit": "\u00b5g/m\u00b3"
       },
       "acs": [],
-      "has_aqi": true
+      "has_aqi": true,
+      "has_am2315c": true
     },
     {
       "id": "room_r1793692575123",
@@ -212,19 +214,19 @@
       "tempSensor": {
         "id": "r1793692575123_sensor_temp",
         "name": "Temperature",
-        "value": 24.5,
+        "value": 28.0,
         "unit": "\u00b0C"
       },
       "humSensor": {
         "id": "r1793692575123_sensor_hum",
         "name": "Humidity",
-        "value": 48,
+        "value": 42.2,
         "unit": "%"
       },
       "co2Sensor": {
         "id": "r1793692575123_sensor_co2",
         "name": "Air Quality",
-        "value": 24,
+        "value": 141.0,
         "unit": "\u00b5g/m\u00b3"
       },
       "acs": [],
@@ -237,7 +239,9 @@
         "warmup": false,
         "_last_real_ts": 1794657894.6878438
       },
-      "has_pir": true
+      "has_pir": true,
+      "has_am2315c": true,
+      "has_aqi": true
     }
   ],
   "rules": [

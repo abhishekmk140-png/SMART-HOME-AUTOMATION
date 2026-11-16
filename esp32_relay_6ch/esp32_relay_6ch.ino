@@ -228,7 +228,7 @@ void poll_air_quality() {
 // =========================================================================
 #if HAS_PIR
 #define PIR_PIN 4         // Sole PIR Output Pin: GPIO 4 (Physical Pin 6)
-#define PIR_HOLD_MS 10000 // Keep Occupied for 10 seconds after motion stops
+#define PIR_HOLD_MS 25000 // Keep Occupied for 25 seconds after motion stops (gives ample time to view on web UI)
 
 bool pir_active = false;
 bool is_occupied = false;
