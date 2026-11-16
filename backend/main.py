@@ -377,87 +377,87 @@ def _poll_single_host(h, p):
                 ok = True
                 sdata = json.loads(resp.read().decode())
                 changed = False
-                    # 1. ASAIR AM2315C Temperature & Humidity
-                    if "temp" in sdata and "hum" in sdata and sdata.get("sensor_ready", True):
-                        t_val = round(max(0.0, float(sdata["temp"])), 1)
-                        h_val = round(max(0.0, min(100.0, float(sdata["hum"]))), 1)
-                        for target_r in ROOMS:
-                            target_host = target_r.get("esp32_url", "").replace("http://", "").replace("https://", "").split("/")[0].split(":")[0]
-                            if target_host == h:
-                                if "tempSensor" in target_r and target_r["tempSensor"].get("value") != t_val:
-                                    target_r["tempSensor"]["value"] = t_val
-                                    changed = True
-                                if "humSensor" in target_r and target_r["humSensor"].get("value") != h_val:
-                                    target_r["humSensor"]["value"] = h_val
-                                    changed = True
-                                if not target_r.get("has_am2315c"):
-                                    target_r["has_am2315c"] = True
-                                    changed = True
-                    elif sdata.get("sensor_ready") is False:
-                        for target_r in ROOMS:
-                            target_host = target_r.get("esp32_url", "").replace("http://", "").replace("https://", "").split("/")[0].split(":")[0]
-                            if target_host == h and target_r.get("has_am2315c"):
-                                target_r["has_am2315c"] = False
+                # 1. ASAIR AM2315C Temperature & Humidity
+                if "temp" in sdata and "hum" in sdata and sdata.get("sensor_ready", True):
+                    t_val = round(max(0.0, float(sdata["temp"])), 1)
+                    h_val = round(max(0.0, min(100.0, float(sdata["hum"]))), 1)
+                    for target_r in ROOMS:
+                        target_host = target_r.get("esp32_url", "").replace("http://", "").replace("https://", "").split("/")[0].split(":")[0]
+                        if target_host == h:
+                            if "tempSensor" in target_r and target_r["tempSensor"].get("value") != t_val:
+                                target_r["tempSensor"]["value"] = t_val
+                                changed = True
+                            if "humSensor" in target_r and target_r["humSensor"].get("value") != h_val:
+                                target_r["humSensor"]["value"] = h_val
+                                changed = True
+                            if not target_r.get("has_am2315c"):
+                                target_r["has_am2315c"] = True
+                                changed = True
+                elif sdata.get("sensor_ready") is False:
+                    for target_r in ROOMS:
+                        target_host = target_r.get("esp32_url", "").replace("http://", "").replace("https://", "").split("/")[0].split(":")[0]
+                        if target_host == h and target_r.get("has_am2315c"):
+                            target_r["has_am2315c"] = False
+                            changed = True
+
+                # 2. Air Quality Sensor (Gallery or assigned room, measured in ug/m3)
+                aq_val = sdata.get("air_quality") or sdata.get("co2")
+                if aq_val is not None:
+                    aq_raw = float(aq_val)
+                    # Convert legacy ESP32 PPM readings (400..2000) if firmware has not been reflashed yet
+                    if sdata.get("air_quality_unit") != "µg/m³" and aq_raw > 500.0:
+                        aq_raw = 10.0 + ((aq_raw - 400.0) * 490.0 / 1600.0)
+                    aq_num = round(max(0.0, aq_raw), 0)
+                    for target_r in ROOMS:
+                        target_host = target_r.get("esp32_url", "").replace("http://", "").replace("https://", "").split("/")[0].split(":")[0]
+                        if target_host == h:
+                            if "co2Sensor" in target_r and target_r["co2Sensor"].get("value") != aq_num:
+                                target_r["co2Sensor"]["value"] = aq_num
+                                changed = True
+                            if "co2Sensor" in target_r and target_r["co2Sensor"].get("unit") != "µg/m³":
+                                target_r["co2Sensor"]["unit"] = "µg/m³"
+                                changed = True
+                            if not target_r.get("has_aqi"):
+                                target_r["has_aqi"] = True
                                 changed = True
 
-                    # 2. Air Quality Sensor (Gallery or assigned room, measured in ug/m3)
-                    aq_val = sdata.get("air_quality") or sdata.get("co2")
-                    if aq_val is not None:
-                        aq_raw = float(aq_val)
-                        # Convert legacy ESP32 PPM readings (400..2000) if firmware has not been reflashed yet
-                        if sdata.get("air_quality_unit") != "µg/m³" and aq_raw > 500.0:
-                            aq_raw = 10.0 + ((aq_raw - 400.0) * 490.0 / 1600.0)
-                        aq_num = round(max(0.0, aq_raw), 0)
-                        for target_r in ROOMS:
-                            target_host = target_r.get("esp32_url", "").replace("http://", "").replace("https://", "").split("/")[0].split(":")[0]
-                            if target_host == h:
-                                if "co2Sensor" in target_r and target_r["co2Sensor"].get("value") != aq_num:
-                                    target_r["co2Sensor"]["value"] = aq_num
-                                    changed = True
-                                if "co2Sensor" in target_r and target_r["co2Sensor"].get("unit") != "µg/m³":
-                                    target_r["co2Sensor"]["unit"] = "µg/m³"
-                                    changed = True
-                                if not target_r.get("has_aqi"):
-                                    target_r["has_aqi"] = True
-                                    changed = True
+                # 3. PIR Motion Sensor & Occupancy (Conference Room)
+                if "occupancy" in sdata or "occupied" in sdata or "pir" in sdata:
+                    occ = sdata["occupancy"] if "occupancy" in sdata and isinstance(sdata["occupancy"], dict) else sdata
+                    sec_raw = occ.get("seconds_ago")
+                    try:
+                        sec_ago = int(sec_raw) if sec_raw is not None else 999
+                    except Exception:
+                        sec_ago = 999
+                    raw_occ = bool(occ.get("occupied", False))
+                    raw_pir = bool(occ.get("pir", occ.get("pir1", False)))
+                    has_fw_debounce = "noise_filtered" in occ
+                    now_ts = time.time()
+                    for target_r in ROOMS:
+                        target_host = target_r.get("esp32_url", "").replace("http://", "").replace("https://", "").split("/")[0].split(":")[0]
+                        is_target = (target_host == h and "conference" in target_r.get("name", "").lower()) or (sdata.get("board_id") == 3 and "conference" in target_r.get("name", "").lower()) or (target_host == h)
+                        if is_target:
+                            prev_occ = target_r.get("occupancy", {})
+                            effective_occ = raw_occ or raw_pir
+                            effective_pir = raw_pir
+                            clean_sec_ago = sec_ago
+                            last_real_ts = now_ts if effective_occ else prev_occ.get("_last_real_ts", 0.0)
 
-                    # 3. PIR Motion Sensor & Occupancy (Conference Room)
-                    if "occupancy" in sdata:
-                        occ = sdata["occupancy"]
-                        sec_raw = occ.get("seconds_ago")
-                        try:
-                            sec_ago = int(sec_raw) if sec_raw is not None else 999
-                        except Exception:
-                            sec_ago = 999
-                        raw_occ = bool(occ.get("occupied", False))
-                        raw_pir = bool(occ.get("pir", occ.get("pir1", False)))
-                        has_fw_debounce = "noise_filtered" in occ
-                        now_ts = time.time()
-                        for target_r in ROOMS:
-                            target_host = target_r.get("esp32_url", "").replace("http://", "").replace("https://", "").split("/")[0].split(":")[0]
-                            is_target = (target_host == h) or (sdata.get("board_id") == 3 and "conference" in target_r.get("name", "").lower())
-                            if is_target:
-                                prev_occ = target_r.get("occupancy", {})
-                                effective_occ = raw_occ or raw_pir
-                                effective_pir = raw_pir
-                                clean_sec_ago = sec_ago
-                                last_real_ts = now_ts if effective_occ else prev_occ.get("_last_real_ts", 0.0)
+                            if prev_occ.get("occupied") != effective_occ or prev_occ.get("pir") != effective_pir or not target_r.get("has_pir"):
+                                changed = True
+                            target_r["occupancy"] = {
+                                "occupied": effective_occ,
+                                "status": "Occupied" if effective_occ else "Vacant",
+                                "pir": effective_pir,
+                                "pir1": effective_pir,
+                                "seconds_ago": clean_sec_ago,
+                                "warmup": False,
+                                "_last_real_ts": last_real_ts,
+                            }
+                            target_r["has_pir"] = True
 
-                                if prev_occ.get("occupied") != effective_occ or prev_occ.get("pir") != effective_pir or not target_r.get("has_pir"):
-                                    changed = True
-                                target_r["occupancy"] = {
-                                    "occupied": effective_occ,
-                                    "status": "Occupied" if effective_occ else "Vacant",
-                                    "pir": effective_pir,
-                                    "pir1": effective_pir,
-                                    "seconds_ago": clean_sec_ago,
-                                    "warmup": False,
-                                    "_last_real_ts": last_real_ts,
-                                }
-                                target_r["has_pir"] = True
-
-                    if changed:
-                        save_state()
+                if changed:
+                    save_state()
     except Exception as ex:
         ok = False
         ex_str = str(ex)
