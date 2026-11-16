@@ -370,7 +370,9 @@ void setup() {
 #endif
 
   WiFi.mode(WIFI_STA);
-  WiFi.setTxPower(WIFI_POWER_11dBm); // Reduce 2.4GHz RF interference into nearby PIR sensor
+  WiFi.setAutoReconnect(true);
+  WiFi.persistent(true);
+  WiFi.setTxPower(WIFI_POWER_19_5dBm); // Maximum robust transmit power for rock-solid Wi-Fi range
   WiFi.setSleep(false);
   WiFi.config(STATIC_IP, GATEWAY, SUBNET, DNS);
 
@@ -486,6 +488,16 @@ void loop() {
 
   // 3. Fast UDP check again immediately after HTTP
   process_udp();
+
+  // 4. Wi-Fi Auto-Healing Watchdog: automatically reconnects if Wi-Fi drops (never goes offline permanently!)
+  static unsigned long last_wifi_watchdog = 0;
+  if (millis() - last_wifi_watchdog >= 3000) {
+    last_wifi_watchdog = millis();
+    if (WiFi.status() != WL_CONNECTED) {
+      Serial.println("[WIFI WATCHDOG] Wi-Fi lost! Auto-reconnecting immediately...");
+      WiFi.reconnect();
+    }
+  }
 
 #if HAS_AM2315C
   poll_am2315c();
