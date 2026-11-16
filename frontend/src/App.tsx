@@ -752,18 +752,7 @@ function Dashboard({ rooms, M, onToggleRoom, onScene, reloadRooms, isFull, onTog
         <button className="circ" style={{ background: 'var(--pric)', boxShadow: '0 4px 14px rgba(79,70,229,0.4)' }} title="Quick Home Presets" onClick={() => { joySound.pop(); setSheet(true) }}><I n="tune" c="#fff" s={20} /></button>
       </div>
     </div>
-    <div className="row sb" style={{ padding: '18px 20px', borderRadius: 20, flexWrap: 'wrap', gap: 14, border: '1px solid rgba(255,255,255,0.12)', background: 'linear-gradient(135deg, rgba(79,70,229,0.24), rgba(18,25,42,0.88), rgba(6,182,212,0.18))', boxShadow: '0 10px 28px rgba(0,0,0,0.32)' }}>
-      <div>
-        <div style={{ fontSize: 12.5, fontWeight: 600, color: 'var(--onv)' }}>Projected Energy & Live Load</div>
-        <div className="row g8" style={{ flexWrap: 'wrap', marginTop: 4 }}>
-          <span style={{ fontSize: 28, fontWeight: 800, letterSpacing: -.6, color: '#fff' }}>${M.cost.toFixed(2)}</span>
-          <span className="badge row" style={{ background: 'rgba(16,185,129,0.18)', color: '#34D399', gap: 4, fontWeight: 700 }}><I n="trending_down" s={14} />-12% vs last mo</span>
-          <span className="badge row" style={{ background: 'rgba(56,189,248,0.16)', color: '#38BDF8', gap: 4, fontWeight: 700 }}><I n="bolt" s={14} />{M.watts.toFixed(0)} W live</span>
-        </div>
-      </div>
-      <div className="row" style={{ alignItems: 'flex-end', gap: 5 }}>{[[16, .35], [24, .5], [20, .65], [32, .8], [28, .9], [40, 1]].map(([hh, op], i) =>
-        <div key={i} style={{ width: 11, height: hh, borderRadius: '4px 4px 0 0', background: i === 5 ? '#38BDF8' : `rgba(99,102,241,${op})`, boxShadow: i === 5 ? '0 0 12px rgba(56,189,248,0.65)' : 'none' }} />)}</div>
-    </div>
+
     <div className="metrics-grid">
       <Metric ic="lightbulb" c="#F59E0B" bd="Active" label="Lights" val={`${M.lights.filter((d: Dev) => d.isOn).length} / ${M.lights.length}`} type={M.lights.some((d: Dev) => d.isOn) ? 'active-lights' : ''} />
       <Metric spin={M.fans.some((d: Dev) => d.isOn)} ic="toys" c="#06B6D4" bd="Spinning" label="Fans" val={`${M.fans.filter((d: Dev) => d.isOn).length} Active`} type={M.fans.some((d: Dev) => d.isOn) ? 'active-fans' : ''} />
@@ -834,11 +823,6 @@ function Dashboard({ rooms, M, onToggleRoom, onScene, reloadRooms, isFull, onTog
                 <div style={{ minWidth: 0 }}>
                   <div className="row g6" style={{ alignItems: 'center', flexWrap: 'wrap' }}>
                     <b style={{ fontSize: 15.5, letterSpacing: -0.2 }}>{r.name}</b>
-                    {r.esp32_url && (
-                      <span className="badge" style={{ background: 'rgba(6,182,212,0.15)', color: '#38BDF8', fontSize: 10, fontFamily: 'monospace', padding: '1px 7px', border: '1px solid rgba(6,182,212,0.28)' }}>
-                        {r.esp32_url.replace('http://', '')}
-                      </span>
-                    )}
                   </div>
                   <div className="mut" style={{ marginTop: 2 }}>
                     {hasActive ? <span style={{ color: '#A5B4FC', fontWeight: 600 }}>{a} / {totalDevs} devices active</span> : `${totalDevs} devices standby`} · {r.category}
@@ -889,7 +873,6 @@ function Dashboard({ rooms, M, onToggleRoom, onScene, reloadRooms, isFull, onTog
           <I n="add" s={20} c="var(--pri)" /> Add New Room Node
         </button>
       </>}
-    <Rel toast={toast} reloadRooms={reloadRooms} />
   </div>
     {configRoom && (
       <ConfigureRoomModal
@@ -1887,9 +1870,6 @@ function Analytics({ rooms = [], M, isFull, onToggleFull, is3D, onToggle3D, onOp
                   <span style={{ fontSize: 16 }}>💻</span>
                   <b style={{ fontSize: 13, color: '#38BDF8' }}>{hubRoom ? hubRoom.name : 'ENGINEERING HUB'}</b>
                 </div>
-                <span style={{ fontSize: 10, background: 'rgba(56, 189, 248, 0.15)', color: '#38BDF8', padding: '2px 6px', borderRadius: 6, fontWeight: 700 }}>
-                  192.168.1.10
-                </span>
               </div>
               <div className="mut" style={{ fontSize: 11 }}>
                 Sensor: <b>ASAIR AM2315C</b> (GPIO 4 SDA · GPIO 5 SCL)
@@ -1919,9 +1899,6 @@ function Analytics({ rooms = [], M, isFull, onToggleFull, is3D, onToggle3D, onOp
                   <span style={{ fontSize: 16 }}>🚪</span>
                   <b style={{ fontSize: 13, color: '#34D399' }}>{galleryRoom ? galleryRoom.name : 'THE GALLERY'}</b>
                 </div>
-                <span style={{ fontSize: 10, background: 'rgba(16, 185, 129, 0.15)', color: '#34D399', padding: '2px 6px', borderRadius: 6, fontWeight: 700 }}>
-                  192.168.1.11
-                </span>
               </div>
               <div className="mut" style={{ fontSize: 11 }}>
                 Sensor: <b>Air Quality Sensor</b> (GPIO 6 / ADC1_CH5)
@@ -1953,9 +1930,6 @@ function Analytics({ rooms = [], M, isFull, onToggleFull, is3D, onToggle3D, onOp
                     {confRoom ? confRoom.name : 'CONFERENCE'}
                   </b>
                 </div>
-                <span style={{ fontSize: 10, background: 'rgba(255, 255, 255, 0.08)', color: 'var(--onv)', padding: '2px 6px', borderRadius: 6, fontWeight: 700 }}>
-                  {confRoom?.esp32_url ? confRoom.esp32_url.replace('http://', '').split(':')[0] : '192.168.1.14'}
-                </span>
               </div>
               <div className="mut" style={{ fontSize: 11 }}>
                 Sensor: <b>PIR Motion Sensor</b> (GPIO 4 / 6)
