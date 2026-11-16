@@ -1083,8 +1083,8 @@ function ConfigureRoomModal({ room, close, onEdit, onRemove, toast }: any) {
             className="card col g8"
             style={{
               padding: 12,
-              background: 'rgba(30, 41, 59, 0.75)',
-              border: '1px solid rgba(255, 255, 255, 0.1)',
+              background: '#f8fafc',
+              border: '1px solid #e2e8f0',
             }}
           >
             <div className="row sb">
@@ -1126,8 +1126,8 @@ function ConfigureRoomModal({ room, close, onEdit, onRemove, toast }: any) {
             style={{
               padding: 14,
               cursor: 'pointer',
-              background: 'rgba(30, 41, 59, 0.75)',
-              border: '1px solid rgba(255, 255, 255, 0.1)',
+              background: '#f8fafc',
+              border: '1px solid #e2e8f0',
               transition: 'all 0.2s ease',
             }}
             onClick={() => {
@@ -1479,11 +1479,12 @@ function Analytics({ rooms = [], M, isFull, onToggleFull, is3D, onToggle3D, onOp
       minWidth: 160,
       padding: '14px 16px',
       gap: 6,
-      background: 'rgba(26, 34, 52, 0.85)',
-      border: '1px solid rgba(255, 255, 255, 0.08)',
+      background: '#ffffff',
+      border: '1px solid #e2e8f0',
       borderRadius: 14,
       position: 'relative',
-      overflow: 'hidden'
+      overflow: 'hidden',
+      boxShadow: '0 2px 10px rgba(15, 23, 42, 0.04)'
     }}>
       <div className="row sb" style={{ alignItems: 'center' }}>
         <div className="row g6" style={{ alignItems: 'center' }}>
@@ -1494,14 +1495,15 @@ function Analytics({ rooms = [], M, isFull, onToggleFull, is3D, onToggle3D, onOp
               fontWeight: 700,
               padding: '2px 8px',
               borderRadius: 6,
-              background: 'rgba(255, 255, 255, 0.08)',
-              color: '#38BDF8',
+              background: '#f1f5f9',
+              border: '1px solid #e2e8f0',
+              color: '#0284C7',
               letterSpacing: '0.4px',
               display: 'inline-flex',
               alignItems: 'center',
               gap: 4
             }}>
-              {nodeIcon && <I n={nodeIcon} s={12} c="#38BDF8" />}
+              {nodeIcon && <I n={nodeIcon} s={12} c="#0284C7" />}
               {nodeName}
             </span>
           )}
@@ -1510,8 +1512,8 @@ function Analytics({ rooms = [], M, isFull, onToggleFull, is3D, onToggle3D, onOp
       </div>
       <div className="mut" style={{ fontSize: 11, fontWeight: 500 }}>{l}</div>
       <div className="row sb" style={{ alignItems: 'baseline' }}>
-        <b style={{ fontSize: 20, color: '#fff' }}>{v}</b>
-        {sub && <span style={{ fontSize: 10, opacity: 0.7, fontWeight: 600 }}>{sub}</span>}
+        <b style={{ fontSize: 20, color: '#0f172a' }}>{v}</b>
+        {sub && <span style={{ fontSize: 10, color: 'var(--onv)', fontWeight: 600 }}>{sub}</span>}
       </div>
     </div>
   )
@@ -1537,8 +1539,8 @@ function Analytics({ rooms = [], M, isFull, onToggleFull, is3D, onToggle3D, onOp
         </div>
       </div>
     )}
-    <div className="row sb"><div className="row" style={{ background: 'rgba(30,41,59,0.75)', border: '1px solid rgba(255,255,255,0.1)', borderRadius: 9999, padding: 4 }}>{['24 Hours', '7 Days', '30 Days'].map(r => <button key={r} className={`pill ${rng === r ? 'on' : ''}`} style={{ background: rng === r ? undefined : 'transparent', border: rng === r ? undefined : 'none' }} onClick={() => setRng(r)}>{r}</button>)}</div>
-      <div style={{ width: 40, height: 40, borderRadius: '50%', background: 'rgba(30,41,59,0.75)', border: '1px solid rgba(255,255,255,0.1)', display: 'grid', placeItems: 'center' }}><I n="tune" s={20} c="var(--onv)" /></div></div>
+    <div className="row sb"><div className="row" style={{ background: '#f1f5f9', border: '1px solid #e2e8f0', borderRadius: 9999, padding: 4 }}>{['24 Hours', '7 Days', '30 Days'].map(r => <button key={r} className={`pill ${rng === r ? 'on' : ''}`} style={{ background: rng === r ? undefined : 'transparent', border: rng === r ? undefined : 'none' }} onClick={() => setRng(r)}>{r}</button>)}</div>
+      <div style={{ width: 40, height: 40, borderRadius: '50%', background: '#f1f5f9', border: '1px solid #e2e8f0', display: 'grid', placeItems: 'center' }}><I n="tune" s={20} c="var(--onv)" /></div></div>
     
     <div className="card col" style={{ padding: 20, gap: 14, borderRadius: 20 }}>
       <div className="row sb">
@@ -1546,24 +1548,24 @@ function Analytics({ rooms = [], M, isFull, onToggleFull, is3D, onToggle3D, onOp
           <div style={{ fontSize: 13, fontWeight: 500, color: 'var(--onv)' }}>
             Real-time Power Draw · {selectedRoom ? selectedRoom.name : 'All Rooms'}
           </div>
-          <span style={{ fontSize: 32, fontWeight: 800, letterSpacing: -.8 }}>{currentWatts.toFixed(0)}</span>
+          <span style={{ fontSize: 32, fontWeight: 800, letterSpacing: -.8, color: '#0f172a' }}>{currentWatts.toFixed(0)}</span>
           <span style={{ fontSize: 18, color: 'var(--onv)' }}> W</span>
         </div>
-        <span className="badge row" style={{ background: 'rgba(16,185,129,0.2)', color: '#34D399', gap: 5, letterSpacing: .5 }}><I n="circle" o={false} s={8} />OPTIMAL</span>
+        <span className="badge row" style={{ background: 'rgba(16,185,129,0.18)', color: '#059669', gap: 5, letterSpacing: .5 }}><I n="circle" o={false} s={8} />OPTIMAL</span>
       </div>
-      <div className="row sb" style={{ background: 'rgba(26,34,52,0.85)', border: '1px solid rgba(255,255,255,0.08)', borderRadius: 14, padding: '14px 16px' }}>
+      <div className="row sb" style={{ background: '#f8fafc', border: '1px solid #e2e8f0', borderRadius: 14, padding: '14px 16px' }}>
         <div className="row g10">
-          <div style={{ width: 36, height: 36, borderRadius: '50%', background: tint('#3525CD', 0.25), display: 'grid', placeItems: 'center' }}>
+          <div style={{ width: 36, height: 36, borderRadius: '50%', background: '#e0e7ff', display: 'grid', placeItems: 'center' }}>
             <I n="bolt" o={false} c="var(--pri)" s={20} />
           </div>
-          <div><div className="mut" style={{ fontSize: 11 }}>Projected Daily</div><b>{currentDailyKwh.toFixed(1)} kWh</b></div>
+          <div><div className="mut" style={{ fontSize: 11 }}>Projected Daily</div><b style={{ color: '#0f172a' }}>{currentDailyKwh.toFixed(1)} kWh</b></div>
         </div>
-        <div style={{ width: 1, height: 32, background: 'var(--c4)' }} />
-        <div style={{ textAlign: 'right' }}><div className="mut" style={{ fontSize: 11 }}>Est. Monthly Cost</div><b>${currentMonthlyCost.toFixed(2)}</b></div>
+        <div style={{ width: 1, height: 32, background: '#e2e8f0' }} />
+        <div style={{ textAlign: 'right' }}><div className="mut" style={{ fontSize: 11 }}>Est. Monthly Cost</div><b style={{ color: '#0f172a' }}>${currentMonthlyCost.toFixed(2)}</b></div>
       </div>
       <div className="row g10">
-        {[['trending_down', 'var(--sec)', 'vs Yesterday', '-12.4%', '#10B981'], ['eco', 'var(--pri)', 'Carbon Offset', selectedRoom ? '0.5 kg' : '1.4 kg', 'var(--on)']].map(([ic, c, l, v, vc]) =>
-          <div key={l} className="row g8" style={{ flex: 1, background: 'rgba(26,34,52,0.85)', border: '1px solid rgba(255,255,255,0.08)', borderRadius: 12, padding: 12 }}>
+        {[['trending_down', 'var(--sec)', 'vs Yesterday', '-12.4%', '#059669'], ['eco', 'var(--pri)', 'Carbon Offset', selectedRoom ? '0.5 kg' : '1.4 kg', '#0f172a']].map(([ic, c, l, v, vc]) =>
+          <div key={l} className="row g8" style={{ flex: 1, background: '#f8fafc', border: '1px solid #e2e8f0', borderRadius: 12, padding: 12 }}>
             <I n={ic} o={false} c={c} s={20} /><div><div className="mut" style={{ fontSize: 11 }}>{l}</div><b style={{ fontSize: 13, color: vc }}>{v}</b></div>
           </div>
         )}
@@ -1636,7 +1638,7 @@ function Analytics({ rooms = [], M, isFull, onToggleFull, is3D, onToggle3D, onOp
                   borderRadius: 10,
                   width: '100%',
                   background: selectedRoomId === 'all' ? 'linear-gradient(135deg, #4F46E5, #06B6D4)' : 'transparent',
-                  color: '#fff',
+                  color: selectedRoomId === 'all' ? '#fff' : '#0f172a',
                   cursor: 'pointer',
                   display: 'flex',
                   alignItems: 'center',
@@ -1664,7 +1666,7 @@ function Analytics({ rooms = [], M, isFull, onToggleFull, is3D, onToggle3D, onOp
                     borderRadius: 10,
                     width: '100%',
                     background: selectedRoomId === r.id ? 'linear-gradient(135deg, #0284C7, #06B6D4)' : 'transparent',
-                    color: '#fff',
+                    color: selectedRoomId === r.id ? '#fff' : '#0f172a',
                     cursor: 'pointer',
                     display: 'flex',
                     alignItems: 'center',
