@@ -61,19 +61,19 @@
       "tempSensor": {
         "id": "r1793692482928_sensor_temp",
         "name": "Temperature",
-        "value": 28.0,
+        "value": 27.5,
         "unit": "\u00b0C"
       },
       "humSensor": {
         "id": "r1793692482928_sensor_hum",
         "name": "Humidity",
-        "value": 42.2,
+        "value": 43.4,
         "unit": "%"
       },
       "co2Sensor": {
         "id": "r1793692482928_sensor_co2",
         "name": "Air Quality",
-        "value": 141.0,
+        "value": 136.0,
         "unit": "\u00b5g/m\u00b3"
       },
       "acs": [],
@@ -142,19 +142,19 @@
       "tempSensor": {
         "id": "r1793692559305_sensor_temp",
         "name": "Temperature",
-        "value": 28.0,
+        "value": 27.5,
         "unit": "\u00b0C"
       },
       "humSensor": {
         "id": "r1793692559305_sensor_hum",
         "name": "Humidity",
-        "value": 42.2,
+        "value": 43.4,
         "unit": "%"
       },
       "co2Sensor": {
         "id": "r1793692559305_sensor_co2",
         "name": "Air Quality",
-        "value": 141.0,
+        "value": 136.0,
         "unit": "\u00b5g/m\u00b3"
       },
       "acs": [],
@@ -214,19 +214,19 @@
       "tempSensor": {
         "id": "r1793692575123_sensor_temp",
         "name": "Temperature",
-        "value": 28.0,
+        "value": 27.5,
         "unit": "\u00b0C"
       },
       "humSensor": {
         "id": "r1793692575123_sensor_hum",
         "name": "Humidity",
-        "value": 42.2,
+        "value": 43.4,
         "unit": "%"
       },
       "co2Sensor": {
         "id": "r1793692575123_sensor_co2",
         "name": "Air Quality",
-        "value": 141.0,
+        "value": 136.0,
         "unit": "\u00b5g/m\u00b3"
       },
       "acs": [],
