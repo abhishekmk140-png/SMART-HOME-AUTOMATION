@@ -237,7 +237,7 @@ int last_pin4 = 0;
 unsigned long total_motion_hits = 0;
 
 void init_pir() {
-  pinMode(PIR_PIN, INPUT_PULLDOWN);
+  pinMode(PIR_PIN, INPUT); // Standard high-impedance input so 3.3V OUT signal is not loaded
   Serial.println("[PIR] Active on IO4 (GPIO 4 / Physical Pin 6) | Connections: VCC=5V, GND=GND, OUT=IO4");
 }
 
@@ -327,7 +327,7 @@ String json() {
 
 void reply() { 
   server.sendHeader("Access-Control-Allow-Origin", "*"); 
-  server.sendHeader("Connection", "keep-alive");
+  server.sendHeader("Connection", "close");
   server.send(200, "application/json", json()); 
 }
 
@@ -392,6 +392,7 @@ void setup() {
 
   if (ok) {
     MDNS.begin(HOST_NAME);
+    WiFi.setSleep(false); // Disable modem sleep immediately after connection so radio stays active (0ms UDP latency!)
     Serial.printf("[ONLINE] Connected to Wi-Fi!\n");
     Serial.printf("[IP ADDRESS] http://%s\n", WiFi.localIP().toString().c_str());
     Serial.printf("[mDNS URL]   http://%s.local\n", HOST_NAME);
@@ -458,22 +459,8 @@ void setup() {
   Serial.printf("[READY] HTTP Port 80 & Fast UDP Port %d Active\n", UDP_PORT);
 }
 
-void loop() { 
-  server.handleClient(); 
-
-#if HAS_AM2315C
-  poll_am2315c();
-#endif
-
-#if HAS_AIR_QUALITY
-  poll_air_quality();
-#endif
-
-#if HAS_PIR
-  poll_pir();
-#endif
-
-  // Fast UDP handling (0ms lag)
+// Ultra-fast 0ms UDP Datagram Packet Processor
+inline void process_udp() {
   int packetSize = udp.parsePacket();
   if (packetSize > 0) {
     char buf[32];
@@ -488,4 +475,27 @@ void loop() {
       }
     }
   }
+}
+
+void loop() { 
+  // 1. Process instant UDP commands FIRST before any other tasks (0ms latency!)
+  process_udp();
+
+  // 2. Handle HTTP clients
+  server.handleClient(); 
+
+  // 3. Fast UDP check again immediately after HTTP
+  process_udp();
+
+#if HAS_AM2315C
+  poll_am2315c();
+#endif
+
+#if HAS_AIR_QUALITY
+  poll_air_quality();
+#endif
+
+#if HAS_PIR
+  poll_pir();
+#endif
 }

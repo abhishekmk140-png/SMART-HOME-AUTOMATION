@@ -293,17 +293,17 @@ def _fire_udp_instantly(r):
     wire_mask = get_room_wire_mask(r)
     pkt = f"v={wire_mask}".encode()
     try:
-        _udp_socket.sendto(pkt, (host, 8888))
-        _udp_socket.sendto(pkt, (host, 8888))
+        for _ in range(3):
+            _udp_socket.sendto(pkt, (host, 8888))
     except Exception:
         pass
 
 def _send_fast_cmd(host, port, wire_mask):
-    # 1. Instant 0ms UDP Datagram (send twice to guarantee Wi-Fi delivery)
+    # 1. Instant 0ms UDP Datagram (send 3 times for guaranteed delivery over Wi-Fi)
     try:
         pkt = f"v={wire_mask}".encode()
-        _udp_socket.sendto(pkt, (host, 8888))
-        _udp_socket.sendto(pkt, (host, 8888))
+        for _ in range(3):
+            _udp_socket.sendto(pkt, (host, 8888))
     except Exception:
         pass
 
@@ -311,11 +311,11 @@ def _send_fast_cmd(host, port, wire_mask):
     if os.getenv("VERCEL") == "1" and (host.startswith("192.168.") or host.startswith("10.") or host.startswith("172.16.")):
         return False, "Offline · Cloud server cannot route to private LAN IP (192.168.x)"
 
-    # 2. Fast HTTP request with short 0.8s timeout and non-persistent Connection: close
+    # 2. Fast HTTP request with short 0.6s timeout and non-persistent Connection: close
     url = f"http://{host}:{port}/mask?v={wire_mask}"
     try:
         req = urllib.request.Request(url, headers={"User-Agent": "SmartHome/1.0", "Connection": "close"})
-        with urllib.request.urlopen(req, timeout=0.8) as resp:
+        with urllib.request.urlopen(req, timeout=0.6) as resp:
             if resp.status == 200:
                 return True, ""
     except Exception as e:
@@ -368,24 +368,15 @@ def _poll_single_host(h, p):
                 }
         return
 
+    ok = False
+    err = ""
     try:
-        s = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
-        s.settimeout(0.35)
-        res = s.connect_ex((h, p))
-        s.close()
-        ok = (res == 0)
-        err = "" if ok else ("Offline · Connection timed out" if res == 10060 else "Offline · Port 80 refused (Check Wi-Fi/Power)")
-    except Exception as ex:
-        ok = False
-        err = f"Offline · {str(ex)[:25]}"
-
-    if ok:
-        try:
-            req = urllib.request.Request(f"http://{h}:{p}/status", headers={"Connection": "close", "User-Agent": "SmartHome/1.0"})
-            with urllib.request.urlopen(req, timeout=0.6) as resp:
-                if resp.status == 200:
-                    sdata = json.loads(resp.read().decode())
-                    changed = False
+        req = urllib.request.Request(f"http://{h}:{p}/status", headers={"Connection": "close", "User-Agent": "SmartHome/1.0"})
+        with urllib.request.urlopen(req, timeout=0.6) as resp:
+            if resp.status == 200:
+                ok = True
+                sdata = json.loads(resp.read().decode())
+                changed = False
                     # 1. ASAIR AM2315C Temperature & Humidity
                     if "temp" in sdata and "hum" in sdata and sdata.get("sensor_ready", True):
                         t_val = round(max(0.0, float(sdata["temp"])), 1)
@@ -466,8 +457,15 @@ def _poll_single_host(h, p):
 
                     if changed:
                         save_state()
-        except Exception:
-            pass
+    except Exception as ex:
+        ok = False
+        ex_str = str(ex)
+        if "10061" in ex_str or "refused" in ex_str:
+            err = "Offline · Port 80 refused (Check Wi-Fi/Power)"
+        elif "timed out" in ex_str or "timeout" in ex_str:
+            err = "Offline · Connection timed out"
+        else:
+            err = f"Offline · {ex_str[:25]}"
 
     now_str = time.strftime("%H:%M:%S")
     for other in ROOMS:

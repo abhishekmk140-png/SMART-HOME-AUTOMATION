@@ -35,6 +35,10 @@ function sanitizeUrl(u: string): string {
 }
 
 let rawStored = localStorage.getItem('baseUrl') || '/api'
+if (rawStored.includes('192.168.1.12')) {
+  rawStored = rawStored.replace('192.168.1.12', '192.168.1.7')
+  localStorage.setItem('baseUrl', rawStored)
+}
 let base = sanitizeUrl(rawStored)
 if (base !== rawStored) {
   localStorage.setItem('baseUrl', base)

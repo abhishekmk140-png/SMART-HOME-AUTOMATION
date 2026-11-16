@@ -19,7 +19,7 @@
           "name": "LEDs (2x)",
           "type": "light",
           "isOn": false,
-          "value": 100,
+          "value": 30.0,
           "relayChannel": 2
         },
         {
@@ -27,7 +27,7 @@
           "name": "LEDs (2x)",
           "type": "light",
           "isOn": false,
-          "value": 100,
+          "value": 30.0,
           "relayChannel": 3
         },
         {
@@ -35,7 +35,7 @@
           "name": "LEDs (2x)",
           "type": "light",
           "isOn": false,
-          "value": 100,
+          "value": 30.0,
           "relayChannel": 4
         }
       ],
@@ -45,7 +45,7 @@
           "name": "FAN 1",
           "type": "fan",
           "isOn": false,
-          "value": 2,
+          "value": 4.0,
           "relayChannel": 5
         },
         {
@@ -53,7 +53,7 @@
           "name": "FAN 2",
           "type": "fan",
           "isOn": false,
-          "value": 2,
+          "value": 4.0,
           "relayChannel": 6
         }
       ],
@@ -61,13 +61,13 @@
       "tempSensor": {
         "id": "r1793692482928_sensor_temp",
         "name": "Temperature",
-        "value": 29.6,
+        "value": 26.8,
         "unit": "\u00b0C"
       },
       "humSensor": {
         "id": "r1793692482928_sensor_hum",
         "name": "Humidity",
-        "value": 28.6,
+        "value": 52.3,
         "unit": "%"
       },
       "co2Sensor": {
@@ -98,7 +98,7 @@
           "name": "Fan Bay LEDs (2x)",
           "type": "light",
           "isOn": false,
-          "value": 100,
+          "value": 30.0,
           "relayChannel": 2
         },
         {
@@ -106,7 +106,7 @@
           "name": "Fan Bay Rear LEDs (2x)",
           "type": "light",
           "isOn": false,
-          "value": 100,
+          "value": 30.0,
           "relayChannel": 3
         }
       ],
@@ -116,7 +116,7 @@
           "name": "FAN 1",
           "type": "fan",
           "isOn": false,
-          "value": 2,
+          "value": 4.0,
           "relayChannel": 4
         },
         {
@@ -124,7 +124,7 @@
           "name": "FAN 2",
           "type": "fan",
           "isOn": false,
-          "value": 2,
+          "value": 4.0,
           "relayChannel": 5
         }
       ],
@@ -153,7 +153,7 @@
       "co2Sensor": {
         "id": "r1793692559305_sensor_co2",
         "name": "Air Quality",
-        "value": 24.0,
+        "value": 30.0,
         "unit": "\u00b5g/m\u00b3"
       },
       "acs": [],
@@ -178,7 +178,7 @@
           "name": "LED 2 (1x)",
           "type": "light",
           "isOn": false,
-          "value": 100,
+          "value": 30.0,
           "relayChannel": 2
         },
         {
@@ -186,7 +186,7 @@
           "name": "LED 3 (1x)",
           "type": "light",
           "isOn": false,
-          "value": 100,
+          "value": 30.0,
           "relayChannel": 3
         },
         {
@@ -194,7 +194,7 @@
           "name": "LED 4 (1x)",
           "type": "light",
           "isOn": false,
-          "value": 100,
+          "value": 30.0,
           "relayChannel": 4
         }
       ],
@@ -204,7 +204,7 @@
           "name": "FAN 1",
           "type": "fan",
           "isOn": false,
-          "value": 2,
+          "value": 4.0,
           "relayChannel": 5
         }
       ],
@@ -229,15 +229,13 @@
       },
       "acs": [],
       "occupancy": {
-        "occupied": true,
-        "status": "Occupied",
+        "occupied": false,
+        "status": "Vacant",
         "pir": false,
         "pir1": false,
-        "seconds_ago": 0,
+        "seconds_ago": 999,
         "warmup": false,
-        "_hold_until": 1794481991.7024362,
-        "_last_real_ts": 0.0,
-        "_pir_streak": 0
+        "_last_real_ts": 1794657894.6878438
       },
       "has_pir": true
     }
@@ -250,7 +248,9 @@
       "triggerType": "temperature",
       "thresholdValue": 26.0,
       "actionDescription": "Action: Fans \u2192 Speed Level 4 & AC Cool",
-      "isEnabled": true
+      "isEnabled": false,
+      "triggered": false,
+      "last_checked": "16:19:20"
     },
     {
       "id": "rule_2",
@@ -259,7 +259,9 @@
       "triggerType": "co2",
       "thresholdValue": 75.0,
       "actionDescription": "Action: Exhaust Fan \u2192 TURN ON Speed 4",
-      "isEnabled": true
+      "isEnabled": false,
+      "triggered": false,
+      "last_checked": "16:19:20"
     },
     {
       "id": "rule_3",
@@ -268,7 +270,9 @@
       "triggerType": "schedule",
       "thresholdValue": 23.0,
       "actionDescription": "Action: Off sockets, AC to 25\u00b0C & lower lights",
-      "isEnabled": true
+      "isEnabled": false,
+      "triggered": false,
+      "last_checked": "16:16:46"
     }
   ],
   "esp32_url": "http://192.168.1.10",
