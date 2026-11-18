@@ -17,12 +17,29 @@ const sSensor = (s: Sensor, t: 'temperature' | 'humidity' | 'co2') => {
   return { color: v < 35 ? '#10B981' : v < 115 ? '#F59E0B' : '#EF4444', text: v < 35 ? 'Good' : v < 115 ? 'Moderate' : 'High', icon: 'co2', pct: v / 250 }
 }
 
-function Header({ title, installPrompt, onInstallApp }: any) {
+function Header({ title, installPrompt, onInstallApp, onRefresh, activeCount }: any) {
+  const [refreshing, setRefreshing] = useState(false)
+  const handleRefresh = async () => {
+    if (onRefresh) {
+      setRefreshing(true)
+      try {
+        await onRefresh()
+      } finally {
+        setTimeout(() => setRefreshing(false), 500)
+      }
+    }
+  }
+
   return (
     <div className="hdr">
-      <div className="row g10">
+      <div className="row g10" style={{ alignItems: 'center' }}>
         <h1>{title}</h1>
         <span className="live-pill"><span className="dot" />Live</span>
+        {activeCount !== undefined && (
+          <span className="pill" style={{ fontSize: 11, fontWeight: 700, background: '#e0e7ff', color: '#4338ca', border: '1px solid #c7d2fe', padding: '3px 8px' }}>
+            ⚡ {activeCount} Active
+          </span>
+        )}
         {installPrompt && (
           <button
             className="pill joy-bounce"
@@ -41,6 +58,16 @@ function Header({ title, installPrompt, onInstallApp }: any) {
           </button>
         )}
       </div>
+      {onRefresh && (
+        <button
+          className="circ"
+          style={{ width: 34, height: 34, background: '#f1f5f9', border: '1px solid #e2e8f0', cursor: 'pointer', display: 'grid', placeItems: 'center' }}
+          title="Refresh Telemetry"
+          onClick={handleRefresh}
+        >
+          <I n="refresh" s={18} c="#475569" className={refreshing ? 'spin' : ''} />
+        </button>
+      )}
     </div>
   )
 }
@@ -734,7 +761,7 @@ function Dashboard({ rooms, M, onToggleRoom, onScene, reloadRooms, isFull, onTog
       <div style={{ fontSize: 20, fontWeight: 800, letterSpacing: -.3, marginTop: 2 }}>{val}</div>
     </div>
   )
-  return <><Header title="Dashboard" isFull={isFull} onToggleFull={onToggleFull} onOpenMobile={onOpenMobile} onLock={onLock} livelyOn={livelyOn} onToggleLively={onToggleLively} installPrompt={installPrompt} onInstallApp={onInstallApp} />
+  return <><Header title="Dashboard" isFull={isFull} onToggleFull={onToggleFull} onOpenMobile={onOpenMobile} onLock={onLock} livelyOn={livelyOn} onToggleLively={onToggleLively} installPrompt={installPrompt} onInstallApp={onInstallApp} onRefresh={reloadRooms} activeCount={rooms.reduce((acc: number, r: any) => acc + (r.devices?.filter((d: any) => d.isOn).length || 0), 0)} />
   <div className="scroll col" style={{ gap: 18 }}>
     <div className="row sb" style={{ flexWrap: 'wrap', gap: 12 }}>
       <div>
@@ -821,13 +848,25 @@ function Dashboard({ rooms, M, onToggleRoom, onScene, reloadRooms, isFull, onTog
                     <b style={{ fontSize: 15.5, letterSpacing: -0.2 }}>{r.name}</b>
                   </div>
                   <div className="mut" style={{ marginTop: 2 }}>
-                    {hasActive ? <span style={{ color: '#A5B4FC', fontWeight: 600 }}>{a} / {totalDevs} devices active</span> : `${totalDevs} devices standby`} · {r.category}
+                    {hasActive ? <span style={{ color: '#4F46E5', fontWeight: 700 }}>{a} / {totalDevs} devices active</span> : `${totalDevs} devices standby`} · {r.category}
                   </div>
                 </div>
               </div>
               <div className="row g8" style={{ alignItems: 'center', flexShrink: 0 }}>
                 <div className="col" style={{ alignItems: 'flex-end', gap: 2 }}>
-                  {(r.name.toUpperCase().includes('CONFERENCE') || r.name.toUpperCase().includes('GALLERY') || r.name.toUpperCase().includes('ENGINEERING')) ? null : (
+                  {r.name.toUpperCase().includes('ENGINEERING') ? (
+                    <span className="badge" style={{ background: '#e0f2fe', color: '#0369a1', fontWeight: 700, fontSize: 11 }}>
+                      {r.tempSensor?.value > 0 ? `🌡️ ${r.tempSensor.value.toFixed(1)}°C · ${r.humSensor?.value?.toFixed(0) || 0}%` : '🌡️ Sensor Standby'}
+                    </span>
+                  ) : r.name.toUpperCase().includes('GALLERY') ? (
+                    <span className="badge" style={{ background: '#ecfdf5', color: '#047857', fontWeight: 700, fontSize: 11 }}>
+                      {r.co2Sensor?.value < 1800 ? `🍃 ${r.co2Sensor.value.toFixed(0)} µg/m³` : '🍃 Air Quality'}
+                    </span>
+                  ) : r.name.toUpperCase().includes('CONFERENCE') ? (
+                    <span className="badge" style={{ background: r.occupancy?.occupied ? '#ecfdf5' : '#f1f5f9', color: r.occupancy?.occupied ? '#047857' : '#64748b', fontWeight: 700, fontSize: 11 }}>
+                      {r.occupancy?.occupied ? '🟢 Occupied' : '⚪ Vacant'}
+                    </span>
+                  ) : (
                     <>
                       <span className="badge" style={{ background: tint(c.color), color: c.color, fontWeight: 700 }}>{r.co2Sensor.value.toFixed(0)} {r.co2Sensor.unit || 'µg/m³'}</span>
                       <span className="mut" style={{ fontSize: 11 }}>{r.tempSensor.value.toFixed(1)}°C · {r.humSensor.value.toFixed(0)}%</span>
@@ -843,7 +882,7 @@ function Dashboard({ rooms, M, onToggleRoom, onScene, reloadRooms, isFull, onTog
                 </div>
               </div>
             </div>
-            <div style={{ height: 4, borderRadius: 9999, background: 'rgba(255,255,255,0.06)', overflow: 'hidden' }}>
+            <div style={{ height: 4, borderRadius: 9999, background: '#f1f5f9', overflow: 'hidden' }}>
               <div style={{ height: '100%', width: `${pct}%`, borderRadius: 9999, background: hasActive ? 'linear-gradient(90deg, #6366F1, #38BDF8)' : 'transparent', transition: 'width 0.3s ease' }} />
             </div>
             <div className="row sb" style={{ paddingTop: 2 }}>
@@ -852,7 +891,7 @@ function Dashboard({ rooms, M, onToggleRoom, onScene, reloadRooms, isFull, onTog
               </button>
               <button
                 className="pill"
-                style={{ padding: '5px 12px', fontSize: 12, gap: 5, color: '#E2E8F0' }}
+                style={{ padding: '5px 12px', fontSize: 12, gap: 5, color: '#334155', fontWeight: 600, background: '#f1f5f9', border: '1px solid #e2e8f0' }}
                 onClick={(e) => {
                   e.stopPropagation()
                   joySound.pop()
@@ -1313,8 +1352,60 @@ function RoomDetail({ room, back, onToggleDev, onToggleAll, act, toast }: any) {
           />
         </div>
       )}
-      {d.isOn && (d.type === 'light' || d.type === 'fan') && <div style={{ marginTop: 6 }}><div className="mut">{d.type === 'fan' ? 'Airflow Speed Level:' : 'Brightness:'}</div>
-        <input type="range" min={1} max={d.type === 'fan' ? 5 : 100} step={1} defaultValue={d.value} onMouseUp={e => act(() => api.value(R.id, d.id, +(e.target as any).value))} onTouchEnd={e => act(() => api.value(R.id, d.id, +(e.target as any).value))} /></div>}
+      {d.isOn && (d.type === 'light' || d.type === 'fan') && (
+        <div style={{ marginTop: 6 }} className="col g6">
+          <div className="row sb" style={{ alignItems: 'center' }}>
+            <div className="mut" style={{ fontSize: 12, fontWeight: 600 }}>
+              {d.type === 'fan' ? `Airflow Speed: Level ${Math.round(d.value)}` : `Brightness: ${Math.round(d.value)}%`}
+            </div>
+            <div className="row g4">
+              {d.type === 'light' ? [25, 50, 75, 100].map(p => (
+                <button
+                  key={p}
+                  className="pill"
+                  style={{
+                    padding: '2px 7px',
+                    fontSize: 10,
+                    fontWeight: 700,
+                    background: Math.round(d.value) === p ? '#4F46E5' : '#f1f5f9',
+                    color: Math.round(d.value) === p ? '#fff' : '#475569',
+                    border: '1px solid #e2e8f0',
+                    cursor: 'pointer'
+                  }}
+                  onClick={() => act(() => api.value(R.id, d.id, p))}
+                >
+                  {p}%
+                </button>
+              )) : [1, 2, 3, 4, 5].map(s => (
+                <button
+                  key={s}
+                  className="pill"
+                  style={{
+                    padding: '2px 7px',
+                    fontSize: 10,
+                    fontWeight: 700,
+                    background: Math.round(d.value) === s ? '#0284C7' : '#f1f5f9',
+                    color: Math.round(d.value) === s ? '#fff' : '#475569',
+                    border: '1px solid #e2e8f0',
+                    cursor: 'pointer'
+                  }}
+                  onClick={() => act(() => api.value(R.id, d.id, s))}
+                >
+                  S{s}
+                </button>
+              ))}
+            </div>
+          </div>
+          <input
+            type="range"
+            min={1}
+            max={d.type === 'fan' ? 5 : 100}
+            step={1}
+            value={d.value}
+            onChange={e => act(() => api.value(R.id, d.id, +e.target.value))}
+          />
+        </div>
+      )}
       <div className="row sb" style={{ borderTop: '1px solid rgba(255,255,255,0.08)', paddingTop: 6, marginTop: 4 }}>
         <span className="mut" style={{ fontSize: 11, textTransform: 'uppercase' }}>{d.type === 'ac' ? 'Air Conditioner (AC)' : d.type}</span>
         <div className="row g6">
@@ -1594,11 +1685,12 @@ function Analytics({ rooms = [], M, isFull, onToggleFull, is3D, onToggle3D, onOp
               display: 'inline-flex',
               alignItems: 'center',
               gap: 6,
-              background: 'rgba(30, 41, 59, 0.9)',
-              border: '1px solid rgba(255, 255, 255, 0.18)',
+              background: '#4F46E5',
+              border: 'none',
               color: '#fff',
               cursor: 'pointer',
               borderRadius: 9999,
+              boxShadow: '0 2px 8px rgba(79, 70, 229, 0.25)'
             }}
             onClick={() => {
               joySound.pop()
@@ -1606,7 +1698,7 @@ function Analytics({ rooms = [], M, isFull, onToggleFull, is3D, onToggle3D, onOp
             }}
           >
             <span>{selectedRoom ? selectedRoom.name : 'All Rooms'}</span>
-            <I n={dropdownOpen ? 'expand_less' : 'expand_more'} s={16} />
+            <I n={dropdownOpen ? 'expand_less' : 'expand_more'} s={16} c="#fff" />
           </button>
 
           {dropdownOpen && (
@@ -1735,18 +1827,18 @@ function Analytics({ rooms = [], M, isFull, onToggleFull, is3D, onToggle3D, onOp
             <span>{r.name.toUpperCase().includes('GALLERY') ? '🚪' : r.name.toUpperCase().includes('ENGINEERING') ? '💻' : '💼'}</span>
             <span>{r.name}</span>
             {r.name.toUpperCase().includes('ENGINEERING') && (
-              <span style={{ fontSize: 9, background: 'rgba(16,185,129,0.25)', color: '#34D399', padding: '1px 5px', borderRadius: 4 }}>
+              <span style={{ fontSize: 9, background: 'rgba(2,132,199,0.12)', color: '#0284C7', padding: '1px 5px', borderRadius: 4, fontWeight: 700 }}>
                 AM2315C
               </span>
             )}
             {r.name.toUpperCase().includes('GALLERY') && (
-              <span style={{ fontSize: 9, background: 'rgba(14,165,233,0.25)', color: '#38BDF8', padding: '1px 5px', borderRadius: 4 }}>
+              <span style={{ fontSize: 9, background: 'rgba(5,150,105,0.12)', color: '#059669', padding: '1px 5px', borderRadius: 4, fontWeight: 700 }}>
                 Air Quality
               </span>
             )}
             {r.name.toUpperCase().includes('CONFERENCE') && (
-              <span style={{ fontSize: 9, background: r.occupancy?.occupied ? 'rgba(16,185,129,0.25)' : 'rgba(239,68,68,0.25)', color: r.occupancy?.occupied ? '#34D399' : '#F87171', padding: '1px 5px', borderRadius: 4, fontWeight: 700 }}>
-                {r.occupancy?.occupied ? 'Occupied' : 'Not Occupied'}
+              <span style={{ fontSize: 9, background: r.occupancy?.occupied ? 'rgba(5,150,105,0.12)' : 'rgba(220,38,38,0.12)', color: r.occupancy?.occupied ? '#059669' : '#DC2626', padding: '1px 5px', borderRadius: 4, fontWeight: 700 }}>
+                {r.occupancy?.occupied ? 'Occupied' : 'Vacant'}
               </span>
             )}
           </button>
@@ -1759,46 +1851,67 @@ function Analytics({ rooms = [], M, isFull, onToggleFull, is3D, onToggle3D, onOp
           <Env
             ic="thermostat"
             c="#F59E0B"
-            bd={(hubRoom?.tempSensor?.value ?? currentTemp) < 20 ? 'Cool' : (hubRoom?.tempSensor?.value ?? currentTemp) <= 26 ? 'Optimal' : 'Warm'}
-            bc="#10B981"
+            bd={
+              (hubRoom?.tempSensor?.value ?? currentTemp) <= 0.5 ? 'Waiting for Sensor' :
+              (hubRoom?.tempSensor?.value ?? currentTemp) < 20 ? 'Cool' :
+              (hubRoom?.tempSensor?.value ?? currentTemp) <= 26 ? 'Optimal' : 'Warm'
+            }
+            bc={
+              (hubRoom?.tempSensor?.value ?? currentTemp) <= 0.5 ? '#64748B' :
+              (hubRoom?.tempSensor?.value ?? currentTemp) <= 26 ? '#10B981' : '#F59E0B'
+            }
             nodeName={hubRoom?.name || "ENGINEERING HUB"}
             nodeIcon="developer_board"
             l="Room Temperature"
-            v={`${(hubRoom?.tempSensor?.value ?? currentTemp).toFixed(1)}°C`}
+            v={(hubRoom?.tempSensor?.value ?? currentTemp) <= 0.5 ? '0.0°C (Standby)' : `${(hubRoom?.tempSensor?.value ?? currentTemp).toFixed(1)}°C`}
             sub="ASAIR AM2315C (GP4/5)"
           />
           <Env
             ic="water_drop"
             c="#06B6D4"
-            bd={(hubRoom?.humSensor?.value ?? currentHum) < 35 ? 'Dry' : (hubRoom?.humSensor?.value ?? currentHum) <= 60 ? 'Ideal' : 'Humid'}
-            bc="#06B6D4"
+            bd={
+              (hubRoom?.humSensor?.value ?? currentHum) <= 0.5 ? 'Sensor Offline' :
+              (hubRoom?.humSensor?.value ?? currentHum) < 35 ? 'Dry' :
+              (hubRoom?.humSensor?.value ?? currentHum) <= 60 ? 'Ideal' : 'Humid'
+            }
+            bc={
+              (hubRoom?.humSensor?.value ?? currentHum) <= 0.5 ? '#64748B' :
+              '#06B6D4'
+            }
             nodeName={hubRoom?.name || "ENGINEERING HUB"}
             nodeIcon="developer_board"
             l="Relative Humidity"
-            v={`${(hubRoom?.humSensor?.value ?? currentHum).toFixed(1)}%`}
+            v={(hubRoom?.humSensor?.value ?? currentHum) <= 0.5 ? '0.0% (Standby)' : `${(hubRoom?.humSensor?.value ?? currentHum).toFixed(1)}%`}
             sub="ASAIR AM2315C (GP4/5)"
           />
           <Env
             ic="co2"
             c="#10B981"
-            bd={(galleryRoom?.co2Sensor?.value ?? currentCo2) < 35 ? 'Good' : (galleryRoom?.co2Sensor?.value ?? currentCo2) < 115 ? 'Moderate' : 'High'}
-            bc="#10B981"
+            bd={
+              (galleryRoom?.co2Sensor?.value ?? currentCo2) >= 1800 ? 'Sensor Floating' :
+              (galleryRoom?.co2Sensor?.value ?? currentCo2) < 35 ? 'Good' :
+              (galleryRoom?.co2Sensor?.value ?? currentCo2) < 115 ? 'Moderate' : 'High'
+            }
+            bc={
+              (galleryRoom?.co2Sensor?.value ?? currentCo2) >= 1800 ? '#F59E0B' :
+              '#10B981'
+            }
             nodeName={galleryRoom?.name || "THE GALLERY"}
             nodeIcon="palette"
             l="Air Quality"
-            v={`${(galleryRoom?.co2Sensor?.value ?? currentCo2).toFixed(0)} µg/m³`}
+            v={(galleryRoom?.co2Sensor?.value ?? currentCo2) >= 1800 ? 'Not Connected' : `${(galleryRoom?.co2Sensor?.value ?? currentCo2).toFixed(0)} µg/m³`}
             sub="Air Quality Sensor (GP6)"
           />
           <Env
             ic={confRoom?.occupancy?.occupied ? "person" : "meeting_room"}
-            c={confRoom?.occupancy?.occupied ? "#10B981" : "#EF4444"}
-            bd={confRoom?.occupancy?.occupied ? "Occupied" : "Not Occupied"}
-            bc={confRoom?.occupancy?.occupied ? "#34D399" : "#F87171"}
+            c={confRoom?.occupancy?.occupied ? "#10B981" : "#64748B"}
+            bd={confRoom?.occupancy?.occupied ? "Occupied" : "Vacant / Standby"}
+            bc={confRoom?.occupancy?.occupied ? "#10B981" : "#64748B"}
             nodeName={confRoom?.name || "CONFERENCE"}
             nodeIcon="groups"
             l="Room Occupancy"
-            v={confRoom?.occupancy?.occupied ? "Occupied" : "Not Occupied"}
-            sub="Room Occupancy"
+            v={confRoom?.occupancy?.occupied ? "Occupied" : "Vacant (Standby)"}
+            sub="PIR Motion (GP7)"
           />
         </div>
       ) : (
@@ -1806,31 +1919,31 @@ function Analytics({ rooms = [], M, isFull, onToggleFull, is3D, onToggle3D, onOp
           <Env
             ic="thermostat"
             c="#F59E0B"
-            bd={currentTemp < 20 ? 'Cool' : currentTemp <= 26 ? 'Optimal' : 'Warm'}
-            bc="#10B981"
+            bd={currentTemp <= 0.5 ? 'Waiting for Sensor' : currentTemp < 20 ? 'Cool' : currentTemp <= 26 ? 'Optimal' : 'Warm'}
+            bc={currentTemp <= 0.5 ? '#64748B' : '#10B981'}
             nodeName={selectedRoom.name}
             l={`${selectedRoom.name} Temp`}
-            v={`${currentTemp.toFixed(1)}°C`}
+            v={currentTemp <= 0.5 ? '0.0°C (Standby)' : `${currentTemp.toFixed(1)}°C`}
             sub={selectedRoom.has_am2315c ? "AM2315C Sensor" : undefined}
           />
           <Env
             ic="water_drop"
             c="#06B6D4"
-            bd={currentHum < 35 ? 'Dry' : currentHum <= 60 ? 'Ideal' : 'Humid'}
-            bc="var(--onv)"
+            bd={currentHum <= 0.5 ? 'Sensor Offline' : currentHum < 35 ? 'Dry' : currentHum <= 60 ? 'Ideal' : 'Humid'}
+            bc={currentHum <= 0.5 ? '#64748B' : 'var(--onv)'}
             nodeName={selectedRoom.name}
             l={`${selectedRoom.name} Humidity`}
-            v={`${currentHum.toFixed(1)}%`}
+            v={currentHum <= 0.5 ? '0.0% (Standby)' : `${currentHum.toFixed(1)}%`}
             sub={selectedRoom.has_am2315c ? "AM2315C Sensor" : undefined}
           />
           <Env
             ic="co2"
             c="#10B981"
-            bd={currentCo2 < 35 ? 'Good' : currentCo2 < 115 ? 'Moderate' : 'High'}
-            bc="#10B981"
+            bd={currentCo2 >= 1800 ? 'Sensor Floating' : currentCo2 < 35 ? 'Good' : currentCo2 < 115 ? 'Moderate' : 'High'}
+            bc={currentCo2 >= 1800 ? '#F59E0B' : '#10B981'}
             nodeName={selectedRoom.name}
             l={`${selectedRoom.name} Air Quality`}
-            v={`${currentCo2.toFixed(0)} µg/m³`}
+            v={currentCo2 >= 1800 ? 'Not Connected' : `${currentCo2.toFixed(0)} µg/m³`}
             sub={selectedRoom.has_aqi ? "Air Quality Sensor" : undefined}
           />
         </div>
@@ -1841,13 +1954,13 @@ function Analytics({ rooms = [], M, isFull, onToggleFull, is3D, onToggle3D, onOp
         <div className="card col" style={{ padding: 18, gap: 14, borderRadius: 16 }}>
           <div className="row sb" style={{ alignItems: 'center' }}>
             <div className="row g8" style={{ alignItems: 'center' }}>
-              <I n="hub" s={20} c="#38BDF8" />
+              <I n="hub" s={20} c="#0284C7" />
               <div>
                 <b style={{ fontSize: 14 }}>Room Node Hardware & Sensor Matrix</b>
                 <div className="mut" style={{ fontSize: 11 }}>Active ESP32-S3 boards with their dedicated telemetry</div>
               </div>
             </div>
-            <span className="badge" style={{ background: 'rgba(16,185,129,0.2)', color: '#34D399', fontSize: 10, fontWeight: 700 }}>
+            <span className="badge" style={{ background: 'rgba(16,185,129,0.15)', color: '#059669', fontSize: 10, fontWeight: 700 }}>
               3 NODES ONLINE
             </span>
           </div>
@@ -1855,8 +1968,9 @@ function Analytics({ rooms = [], M, isFull, onToggleFull, is3D, onToggle3D, onOp
           <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(260px, 1fr))', gap: 12 }}>
             {/* Node 1: Engineering Hub */}
             <div style={{
-              background: 'var(--c1)',
-              border: '1px solid rgba(56, 189, 248, 0.35)',
+              background: '#ffffff',
+              border: '1px solid #e2e8f0',
+              boxShadow: '0 2px 8px rgba(15,23,42,0.04)',
               borderRadius: 12,
               padding: 14,
               display: 'flex',
@@ -1866,26 +1980,27 @@ function Analytics({ rooms = [], M, isFull, onToggleFull, is3D, onToggle3D, onOp
               <div className="row sb" style={{ alignItems: 'center' }}>
                 <div className="row g6" style={{ alignItems: 'center' }}>
                   <span style={{ fontSize: 16 }}>💻</span>
-                  <b style={{ fontSize: 13, color: '#38BDF8' }}>{hubRoom ? hubRoom.name : 'ENGINEERING HUB'}</b>
+                  <b style={{ fontSize: 13, color: '#0284C7' }}>{hubRoom ? hubRoom.name : 'ENGINEERING HUB'}</b>
                 </div>
               </div>
               <div className="mut" style={{ fontSize: 11 }}>
                 Sensor: <b>ASAIR AM2315C</b> (GPIO 4 SDA · GPIO 5 SCL)
               </div>
               <div className="row sb" style={{ alignItems: 'center', marginTop: 4 }}>
-                <span className="badge" style={{ background: 'rgba(245, 158, 11, 0.15)', color: '#F59E0B', fontSize: 11, fontWeight: 700 }}>
-                  <I n="thermostat" s={14} c="#F59E0B" /> {(hubRoom?.tempSensor?.value ?? 24.9).toFixed(1)}°C
+                <span className="badge" style={{ background: 'rgba(245, 158, 11, 0.15)', color: '#D97706', fontSize: 11, fontWeight: 700 }}>
+                  <I n="thermostat" s={14} c="#D97706" /> {(hubRoom?.tempSensor?.value ?? 24.9) <= 0.5 ? 'Offline' : `${(hubRoom?.tempSensor?.value ?? 24.9).toFixed(1)}°C`}
                 </span>
-                <span className="badge" style={{ background: 'rgba(6, 182, 212, 0.15)', color: '#06B6D4', fontSize: 11, fontWeight: 700 }}>
-                  <I n="water_drop" s={14} c="#06B6D4" /> {(hubRoom?.humSensor?.value ?? 50.0).toFixed(1)}%
+                <span className="badge" style={{ background: 'rgba(6, 182, 212, 0.15)', color: '#0284C7', fontSize: 11, fontWeight: 700 }}>
+                  <I n="water_drop" s={14} c="#0284C7" /> {(hubRoom?.humSensor?.value ?? 50.0) <= 0.5 ? 'Offline' : `${(hubRoom?.humSensor?.value ?? 50.0).toFixed(1)}%`}
                 </span>
               </div>
             </div>
 
             {/* Node 2: The Gallery */}
             <div style={{
-              background: 'var(--c1)',
-              border: '1px solid rgba(16, 185, 129, 0.35)',
+              background: '#ffffff',
+              border: '1px solid #e2e8f0',
+              boxShadow: '0 2px 8px rgba(15,23,42,0.04)',
               borderRadius: 12,
               padding: 14,
               display: 'flex',
@@ -1895,26 +2010,27 @@ function Analytics({ rooms = [], M, isFull, onToggleFull, is3D, onToggle3D, onOp
               <div className="row sb" style={{ alignItems: 'center' }}>
                 <div className="row g6" style={{ alignItems: 'center' }}>
                   <span style={{ fontSize: 16 }}>🚪</span>
-                  <b style={{ fontSize: 13, color: '#34D399' }}>{galleryRoom ? galleryRoom.name : 'THE GALLERY'}</b>
+                  <b style={{ fontSize: 13, color: '#059669' }}>{galleryRoom ? galleryRoom.name : 'THE GALLERY'}</b>
                 </div>
               </div>
               <div className="mut" style={{ fontSize: 11 }}>
                 Sensor: <b>Air Quality Sensor</b> (GPIO 6 / ADC1_CH5)
               </div>
               <div className="row sb" style={{ alignItems: 'center', marginTop: 4 }}>
-                <span className="badge" style={{ background: 'rgba(16, 185, 129, 0.15)', color: '#34D399', fontSize: 11, fontWeight: 700 }}>
-                  <I n="co2" s={14} c="#10B981" /> {(galleryRoom?.co2Sensor?.value ?? 24).toFixed(0)} µg/m³
+                <span className="badge" style={{ background: 'rgba(16, 185, 129, 0.15)', color: '#059669', fontSize: 11, fontWeight: 700 }}>
+                  <I n="co2" s={14} c="#059669" /> {(galleryRoom?.co2Sensor?.value ?? 24) >= 1800 ? 'Floating' : `${(galleryRoom?.co2Sensor?.value ?? 24).toFixed(0)} µg/m³`}
                 </span>
-                <span style={{ fontSize: 11, color: (galleryRoom?.co2Sensor?.value ?? 24) < 35 ? '#10B981' : (galleryRoom?.co2Sensor?.value ?? 24) < 115 ? '#F59E0B' : '#EF4444', fontWeight: 600 }}>
-                  {(galleryRoom?.co2Sensor?.value ?? 24) < 35 ? 'Clean Indoor Air' : (galleryRoom?.co2Sensor?.value ?? 24) < 115 ? 'Moderate Air Quality' : 'High Particulate Level'}
+                <span style={{ fontSize: 11, color: (galleryRoom?.co2Sensor?.value ?? 24) >= 1800 ? '#D97706' : '#059669', fontWeight: 600 }}>
+                  {(galleryRoom?.co2Sensor?.value ?? 24) >= 1800 ? 'No Sensor Attached' : (galleryRoom?.co2Sensor?.value ?? 24) < 35 ? 'Clean Indoor Air' : 'Moderate Air Quality'}
                 </span>
               </div>
             </div>
 
             {/* Node 3: Conference Room */}
             <div style={{
-              background: 'var(--c1)',
-              border: `1px solid ${confRoom?.occupancy?.occupied ? 'rgba(16, 185, 129, 0.4)' : 'rgba(239, 68, 68, 0.35)'}`,
+              background: '#ffffff',
+              border: '1px solid #e2e8f0',
+              boxShadow: '0 2px 8px rgba(15,23,42,0.04)',
               borderRadius: 12,
               padding: 14,
               display: 'flex',
@@ -1924,24 +2040,24 @@ function Analytics({ rooms = [], M, isFull, onToggleFull, is3D, onToggle3D, onOp
               <div className="row sb" style={{ alignItems: 'center' }}>
                 <div className="row g6" style={{ alignItems: 'center' }}>
                   <span style={{ fontSize: 16 }}>👥</span>
-                  <b style={{ fontSize: 13, color: confRoom?.occupancy?.occupied ? '#34D399' : '#F87171' }}>
+                  <b style={{ fontSize: 13, color: confRoom?.occupancy?.occupied ? '#059669' : '#475569' }}>
                     {confRoom ? confRoom.name : 'CONFERENCE'}
                   </b>
                 </div>
               </div>
               <div className="mut" style={{ fontSize: 11 }}>
-                Sensor: <b>PIR Motion Sensor</b> (GPIO 4 / 6)
+                Sensor: <b>PIR Motion Sensor</b> (GPIO 7)
               </div>
               <div className="row sb" style={{ alignItems: 'center', marginTop: 4 }}>
                 <span className="badge" style={{
-                  background: confRoom?.occupancy?.occupied ? 'rgba(16, 185, 129, 0.2)' : 'rgba(239, 68, 68, 0.18)',
-                  color: confRoom?.occupancy?.occupied ? '#34D399' : '#F87171',
-                  border: confRoom?.occupancy?.occupied ? '1px solid rgba(16, 185, 129, 0.4)' : '1px solid rgba(239, 68, 68, 0.3)',
+                  background: confRoom?.occupancy?.occupied ? 'rgba(16, 185, 129, 0.15)' : 'rgba(100, 116, 139, 0.12)',
+                  color: confRoom?.occupancy?.occupied ? '#059669' : '#475569',
+                  border: confRoom?.occupancy?.occupied ? '1px solid rgba(16, 185, 129, 0.3)' : '1px solid #e2e8f0',
                   fontSize: 11,
                   fontWeight: 700
                 }}>
-                  <I n={confRoom?.occupancy?.occupied ? "person" : "meeting_room"} s={14} c={confRoom?.occupancy?.occupied ? "#10B981" : "#EF4444"} />
-                  {confRoom?.occupancy?.occupied ? "Occupied" : "Not Occupied"}
+                  <I n={confRoom?.occupancy?.occupied ? "person" : "meeting_room"} s={14} c={confRoom?.occupancy?.occupied ? "#059669" : "#475569"} />
+                  {confRoom?.occupancy?.occupied ? "Occupied" : "Vacant (Standby)"}
                 </span>
               </div>
             </div>
